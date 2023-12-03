@@ -33,11 +33,19 @@ fn parse_num(str: &str) -> NumInfo {
 
 fn find_valid_numbers(before: Vec<usize>, line: &str, after: Vec<usize>) -> Vec<u32> {
     let cur_symbols = find_symbols(line);
-    let valid_numbers = Vec::new();
+    let mut valid_numbers = Vec::new();
     for (idx, char) in line.char_indices() {
         if char.is_digit(10) {
             let NumInfo { num, len } = parse_num(&line[idx..]);
-            let valid_indices = [idx - 1..idx + (len)];
+            let valid_indices = idx - 1..idx + (len);
+            for valid_idx in valid_indices {
+                if before.contains(&valid_idx)
+                    || cur_symbols.contains(&valid_idx)
+                    || after.contains(&valid_idx)
+                {
+                    valid_numbers.push(num);
+                }
+            }
         }
     }
     valid_numbers
