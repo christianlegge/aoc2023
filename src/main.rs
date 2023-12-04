@@ -6,6 +6,7 @@ pub use crate::puzzles::day0;
 pub use crate::puzzles::day1;
 pub use crate::puzzles::day2;
 pub use crate::puzzles::day3;
+pub use crate::puzzles::day4;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -29,6 +30,9 @@ fn main() {
                     }
                     "day3" => {
                         day3::solve(data);
+                    }
+                    "day4" => {
+                        day4::solve(data);
                     }
                     _ => {
                         println!("Invalid argument: {}", args[1]);
