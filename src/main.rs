@@ -2,14 +2,10 @@ use std::fs;
 
 mod puzzles;
 
-pub use crate::puzzles::day0;
-pub use crate::puzzles::day1;
-pub use crate::puzzles::day2;
-pub use crate::puzzles::day3;
-pub use crate::puzzles::day4;
+use crate::puzzles::*;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let args = std::env::args().collect::<Vec<String>>();
     match args.len() {
         1 => {
             println!("No arguments provided");
@@ -33,6 +29,9 @@ fn main() {
                     }
                     "day4" => {
                         day4::solve(data);
+                    }
+                    "day5" => {
+                        day5::solve(data);
                     }
                     _ => {
                         println!("Invalid argument: {}", args[1]);
