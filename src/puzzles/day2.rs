@@ -4,7 +4,7 @@ pub fn solve(data: String) {
     println!("day2");
     let lines = data.split("\n");
     let mut sum = 0;
-    let mut powerSum = 0;
+    let mut power_sum = 0;
     for line in lines {
         let parts = line.split(":").collect::<Vec<&str>>();
         let mut valid = true;
@@ -13,7 +13,7 @@ pub fn solve(data: String) {
             continue;
         }
         let sets = parts[1].split(";");
-        powerSum += find_power(sets.clone().into_iter().collect());
+        power_sum += find_power(sets.clone().into_iter().collect());
         for set in sets {
             let cubes = set.split(",");
             for cube in cubes {
@@ -37,7 +37,7 @@ pub fn solve(data: String) {
                 .unwrap();
         }
     }
-    println!("{}, {}", sum, powerSum)
+    println!("{}, {}", sum, power_sum)
 }
 
 fn find_power(sets: Vec<&str>) -> i32 {

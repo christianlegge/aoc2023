@@ -1,14 +1,14 @@
 pub fn solve(data: String) {
     println!("Text input: {}", data);
     let data = data.split("\n");
-    let mut maxSum = 0;
+    let mut max_sum = 0;
     let mut sum = 0;
     for line in data {
         println!("Line: {}", line);
         if line.trim() == "" {
             println!("Sum: {}", sum);
-            if sum > maxSum {
-                maxSum = sum;
+            if sum > max_sum {
+                max_sum = sum;
             }
             sum = 0;
         } else {
@@ -23,5 +23,5 @@ pub fn solve(data: String) {
             }
         }
     }
-    println!("Max sum: {}", maxSum);
+    println!("Max sum: {}", max_sum);
 }
