@@ -1,5 +1,3 @@
-use std::fs;
-
 mod puzzles;
 
 use crate::puzzles::*;
@@ -12,7 +10,7 @@ fn main() {
         }
         _ => {
             let arg = args[1].as_str();
-            let data = fs::read_to_string(format!("data/{}.txt", arg));
+            let data = std::fs::read_to_string(format!("data/{}.txt", arg));
             match data {
                 Ok(data) => match arg {
                     "day0" => {
@@ -32,6 +30,18 @@ fn main() {
                     }
                     "day5" => {
                         day5::solve(data);
+                    }
+                    "day6" => {
+                        day6::solve(data);
+                    }
+                    "day7" => {
+                        day7::solve(data);
+                    }
+                    "day8" => {
+                        day8::solve(data);
+                    }
+                    "day9" => {
+                        day9::solve(data);
                     }
                     _ => {
                         println!("Invalid argument: {}", args[1]);
