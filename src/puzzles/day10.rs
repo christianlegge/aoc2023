@@ -1,3 +1,5 @@
+use core::fmt::{self, Display};
+
 #[test]
 fn test() {
     solve(String::from(
@@ -34,11 +36,20 @@ enum Direction {
     Down,
 }
 impl PipeMap {
+    fn print(&self) {
+        for line in &self.tiles {
+            for tile in line {
+                print!("{}", tile);
+            }
+            print!("\n");
+        }
+    }
+
     fn walk_path(&self) -> usize {
         let mut length = 1;
         let (mut next, mut dir) = if self.start.x > 0
-            && self.tiles[self.start.y][self.start.x - 1] == 'F'
-            || self.tiles[self.start.y][self.start.x - 1] == '7'
+            && get_valid_tiles(&Direction::Right)
+                .contains(self.tiles[self.start.y][self.start.x - 1])
         {
             (
                 Coords {
@@ -47,8 +58,9 @@ impl PipeMap {
                 },
                 Direction::Right,
             )
-        } else if self.start.x < self.width - 1 && self.tiles[self.start.y][self.start.x + 1] == 'F'
-            || self.tiles[self.start.y][self.start.x + 1] == 'L'
+        } else if self.start.x < self.width - 1
+            && get_valid_tiles(&Direction::Left)
+                .contains(self.tiles[self.start.y][self.start.x + 1])
         {
             (
                 Coords {
@@ -57,8 +69,9 @@ impl PipeMap {
                 },
                 Direction::Left,
             )
-        } else if self.start.y > 0 && self.tiles[self.start.y - 1][self.start.x] == 'F'
-            || self.tiles[self.start.y - 1][self.start.x] == '7'
+        } else if self.start.y > 0
+            && get_valid_tiles(&Direction::Down)
+                .contains(self.tiles[self.start.y - 1][self.start.x])
         {
             (
                 Coords {
@@ -68,8 +81,7 @@ impl PipeMap {
                 Direction::Down,
             )
         } else if self.start.y < self.height - 1
-            && self.tiles[self.start.y + 1][self.start.x] == 'J'
-            || self.tiles[self.start.y + 1][self.start.x] == 'L'
+            && get_valid_tiles(&Direction::Up).contains(self.tiles[self.start.y + 1][self.start.x])
         {
             (
                 Coords {
@@ -99,6 +111,10 @@ impl PipeMap {
                 x: cur_tile.x,
                 y: cur_tile.y - 1,
             },
+            (Direction::Left, '-') => Coords {
+                x: cur_tile.x + 1,
+                y: cur_tile.y,
+            },
             (Direction::Right, 'L') => Coords {
                 x: cur_tile.x,
                 y: cur_tile.y - 1,
@@ -106,6 +122,10 @@ impl PipeMap {
             (Direction::Right, 'F') => Coords {
                 x: cur_tile.x,
                 y: cur_tile.y + 1,
+            },
+            (Direction::Right, '-') => Coords {
+                x: cur_tile.x - 1,
+                y: cur_tile.y,
             },
             (Direction::Up, 'L') => Coords {
                 x: cur_tile.x + 1,
@@ -115,6 +135,10 @@ impl PipeMap {
                 x: cur_tile.x - 1,
                 y: cur_tile.y,
             },
+            (Direction::Up, '|') => Coords {
+                x: cur_tile.x,
+                y: cur_tile.y + 1,
+            },
             (Direction::Down, '7') => Coords {
                 x: cur_tile.x - 1,
                 y: cur_tile.y,
@@ -123,12 +147,42 @@ impl PipeMap {
                 x: cur_tile.x + 1,
                 y: cur_tile.y,
             },
+            (Direction::Down, '|') => Coords {
+                x: cur_tile.x,
+                y: cur_tile.y - 1,
+            },
             _ => panic!("invalid tile"),
         }
     }
 }
 
 pub fn solve(data: String) {
-    let lines = data.split("\n");
-    for line in lines {}
+    let lines = data.split("\n").collect::<Vec<_>>();
+    let mut rows = Vec::new();
+    let mut start = Coords { x: 0, y: 0 };
+
+    for (idx, line) in lines.iter().enumerate() {
+        let chars = line.chars().collect::<Vec<_>>();
+        if let Some(n) = chars.iter().position(|c| c == &'S') {
+            start = Coords { x: n, y: idx };
+        }
+        rows.push(chars);
+    }
+
+    let map = PipeMap {
+        start,
+        width: lines[0].len(),
+        height: lines.len(),
+        tiles: rows,
+    };
+    map.print();
+    map.walk_path();
+}
+fn get_valid_tiles(from_dir: &Direction) -> &str {
+    match from_dir {
+        Direction::Left => "7J-",
+        Direction::Right => "FL-",
+        Direction::Up => "JL|",
+        Direction::Down => "F7|",
+    }
 }
