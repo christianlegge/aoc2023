@@ -1,97 +1,92 @@
 #[test]
 fn test() {
     solve(String::from(
-        "seeds: 79 14 55 13
+        "LLR
 
-seed-to-soil map:
-50 98 2
-52 50 48
-
-soil-to-fertilizer map:
-0 15 37
-37 52 2
-39 0 15
-
-fertilizer-to-water map:
-49 53 8
-0 11 42
-42 0 7
-57 7 4
-
-water-to-light map:
-88 18 7
-18 25 70
-
-light-to-temperature map:
-45 77 23
-81 45 19
-68 64 13
-
-temperature-to-humidity map:
-0 69 1
-1 0 69
-
-humidity-to-location map:
-60 56 37
-56 93 4",
+AAA = (BBB, BBB)
+BBB = (AAA, ZZZ)
+ZZZ = (ZZZ, ZZZ)",
     ));
-}
+    solve(String::from(
+        "LR
 
-struct Ranges {
-    dest: i64,
-    src: i64,
-    len: i64,
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)",
+    ));
 }
 
 pub fn solve(data: String) {
     let mut lines = data.split("\n");
-    let seeds = get_seeds(lines.next().unwrap());
-    let mut maps = Vec::new();
+    let sequence = lines.next().unwrap();
+    lines.next();
+    let mut map = std::collections::HashMap::new();
+    let mut heres = std::collections::HashSet::new();
     for line in lines {
-        if line.contains("map:") {
-            maps.push(Vec::new());
-        } else if line.trim() == "" {
+        if line.trim() == "" {
             continue;
+        }
+        let mut parts = line.split("=");
+        let key = parts.next().unwrap().trim();
+        let paths = parts.next().unwrap().trim_matches(&[' ', '(', ')'] as &[_]);
+        let mut paths = paths.split(", ");
+        map.insert(key, (paths.next().unwrap(), paths.next().unwrap()));
+        if key.ends_with("A") {
+            heres.insert(key);
+        }
+    }
+    // for (key, (left, right)) in map {
+    //     println!("{} = ({}, {})", key, left, right);
+    // }
+    let mut steps = 0;
+    let mut here = "AAA";
+    let mut seq_chars = sequence.chars();
+
+    while map.contains_key("AAA") && here != "ZZZ" {
+        if let Some(dir) = seq_chars.next() {
+            let paths = map.get(here).unwrap();
+            here = match dir {
+                'L' => paths.0,
+                'R' => paths.1,
+                _ => panic!("invalid dir"),
+            };
+            steps += 1;
         } else {
-            maps.last_mut().unwrap().push(get_ranges(line));
+            seq_chars = sequence.chars();
         }
     }
-    let ends = seeds.into_iter().map(|n| walk_maps(n, &maps));
-    println!("min location: {}", ends.min().unwrap());
-}
+    println!("steps to reach ZZZ: {}", steps);
 
-fn get_seeds(seed_line: &str) -> Vec<i64> {
-    let parts = seed_line.split_whitespace();
-    let mut nums = Vec::new();
-    for part in parts {
-        if let Ok(n) = part.parse::<i64>() {
-            nums.push(n);
-        }
-    }
-    nums
-}
-
-fn walk_maps(seed: i64, maps: &Vec<Vec<Ranges>>) -> i64 {
-    let mut curr = seed;
-    'outer: for map in maps {
-        for range in map {
-            if range.src <= curr && curr < range.src + range.len {
-                curr = range.dest + (curr - range.src);
-                continue 'outer;
+    steps = 0;
+    seq_chars = sequence.chars();
+    while !heres.iter().all(|k| k.ends_with("Z")) {
+        if let Some(dir) = seq_chars.next() {
+            // print!("\nHeres:");
+            // for here in &heres {
+            //     print!(" {}", here);
+            // }
+            if steps % 500000 == 0 {
+                println!("steps: {}", steps);
             }
+            let mut new_heres = std::collections::HashSet::new();
+            for here in heres {
+                let paths = map.get(here).unwrap();
+                new_heres.insert(match dir {
+                    'L' => paths.0,
+                    'R' => paths.1,
+                    _ => panic!("invalid dir"),
+                });
+            }
+            steps += 1;
+            heres = new_heres;
+        } else {
+            seq_chars = sequence.chars();
         }
     }
-    curr
-}
-
-fn get_ranges(number_line: &str) -> Ranges {
-    let nums = number_line.split_whitespace();
-    let nums_parsed = nums
-        .map(|n| n.parse::<i64>().unwrap())
-        .collect::<Vec<i64>>();
-    Ranges {
-        dest: nums_parsed[0],
-        src: nums_parsed[1],
-        len: nums_parsed[2],
-    }
+    println!("steps to reach all end in Z: {}", steps);
 }
