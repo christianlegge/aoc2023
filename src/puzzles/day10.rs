@@ -94,63 +94,99 @@ impl PipeMap {
             panic!("error finding first tile");
         };
         while next != self.start {
-            next = self.find_next(&dir, &next);
+            (next, dir) = self.find_next(&dir, &next);
             length += 1;
         }
         length
     }
 
-    fn find_next(&self, from_dir: &Direction, cur_tile: &Coords) -> Coords {
+    fn find_next(&self, from_dir: &Direction, cur_tile: &Coords) -> (Coords, Direction) {
         let tile_value = self.tiles[cur_tile.y][cur_tile.x];
         match (from_dir, tile_value) {
-            (Direction::Left, '7') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y + 1,
-            },
-            (Direction::Left, 'J') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y - 1,
-            },
-            (Direction::Left, '-') => Coords {
-                x: cur_tile.x + 1,
-                y: cur_tile.y,
-            },
-            (Direction::Right, 'L') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y - 1,
-            },
-            (Direction::Right, 'F') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y + 1,
-            },
-            (Direction::Right, '-') => Coords {
-                x: cur_tile.x - 1,
-                y: cur_tile.y,
-            },
-            (Direction::Up, 'L') => Coords {
-                x: cur_tile.x + 1,
-                y: cur_tile.y,
-            },
-            (Direction::Up, 'J') => Coords {
-                x: cur_tile.x - 1,
-                y: cur_tile.y,
-            },
-            (Direction::Up, '|') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y + 1,
-            },
-            (Direction::Down, '7') => Coords {
-                x: cur_tile.x - 1,
-                y: cur_tile.y,
-            },
-            (Direction::Down, 'F') => Coords {
-                x: cur_tile.x + 1,
-                y: cur_tile.y,
-            },
-            (Direction::Down, '|') => Coords {
-                x: cur_tile.x,
-                y: cur_tile.y - 1,
-            },
+            (Direction::Left, '7') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y + 1,
+                },
+                Direction::Up,
+            ),
+            (Direction::Left, 'J') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y - 1,
+                },
+                Direction::Down,
+            ),
+            (Direction::Left, '-') => (
+                Coords {
+                    x: cur_tile.x + 1,
+                    y: cur_tile.y,
+                },
+                Direction::Left,
+            ),
+            (Direction::Right, 'L') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y - 1,
+                },
+                Direction::Down,
+            ),
+            (Direction::Right, 'F') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y + 1,
+                },
+                Direction::Up,
+            ),
+            (Direction::Right, '-') => (
+                Coords {
+                    x: cur_tile.x - 1,
+                    y: cur_tile.y,
+                },
+                Direction::Right,
+            ),
+            (Direction::Up, 'L') => (
+                Coords {
+                    x: cur_tile.x + 1,
+                    y: cur_tile.y,
+                },
+                Direction::Left,
+            ),
+            (Direction::Up, 'J') => (
+                Coords {
+                    x: cur_tile.x - 1,
+                    y: cur_tile.y,
+                },
+                Direction::Right,
+            ),
+            (Direction::Up, '|') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y + 1,
+                },
+                Direction::Up,
+            ),
+            (Direction::Down, '7') => (
+                Coords {
+                    x: cur_tile.x - 1,
+                    y: cur_tile.y,
+                },
+                Direction::Right,
+            ),
+            (Direction::Down, 'F') => (
+                Coords {
+                    x: cur_tile.x + 1,
+                    y: cur_tile.y,
+                },
+                Direction::Left,
+            ),
+            (Direction::Down, '|') => (
+                Coords {
+                    x: cur_tile.x,
+                    y: cur_tile.y - 1,
+                },
+                Direction::Down,
+            ),
             _ => panic!("invalid tile"),
         }
     }
@@ -176,7 +212,7 @@ pub fn solve(data: String) {
         tiles: rows,
     };
     map.print();
-    map.walk_path();
+    println!("path length: {}", map.walk_path());
 }
 fn get_valid_tiles(from_dir: &Direction) -> &str {
     match from_dir {
