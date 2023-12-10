@@ -1,97 +1,211 @@
+use core::{cmp::Ordering, fmt, panic};
 #[test]
 fn test() {
     solve(String::from(
-        "seeds: 79 14 55 13
-
-seed-to-soil map:
-50 98 2
-52 50 48
-
-soil-to-fertilizer map:
-0 15 37
-37 52 2
-39 0 15
-
-fertilizer-to-water map:
-49 53 8
-0 11 42
-42 0 7
-57 7 4
-
-water-to-light map:
-88 18 7
-18 25 70
-
-light-to-temperature map:
-45 77 23
-81 45 19
-68 64 13
-
-temperature-to-humidity map:
-0 69 1
-1 0 69
-
-humidity-to-location map:
-60 56 37
-56 93 4",
+        "32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483",
     ));
 }
 
-struct Ranges {
-    dest: i64,
-    src: i64,
-    len: i64,
-}
-
 pub fn solve(data: String) {
-    let mut lines = data.split("\n");
-    let seeds = get_seeds(lines.next().unwrap());
-    let mut maps = Vec::new();
-    for line in lines {
-        if line.contains("map:") {
-            maps.push(Vec::new());
-        } else if line.trim() == "" {
-            continue;
-        } else {
-            maps.last_mut().unwrap().push(get_ranges(line));
-        }
+    let mut lines = data
+        .split("\n")
+        .filter(|s| s.trim() != "")
+        .collect::<Vec<_>>();
+    lines.sort_by(|a, b| {
+        compare_cards(
+            b.split_whitespace().next().unwrap(),
+            a.split_whitespace().next().unwrap(),
+        )
+    });
+    lines.sort_by(|a, b| {
+        hand_from_wildcards(b.split_whitespace().next().unwrap())
+            .partial_cmp(&hand_from_wildcards(a.split_whitespace().next().unwrap()))
+            .unwrap()
+    });
+    let mut sum = 0;
+    for (idx, line) in lines.iter().enumerate() {
+        let mut parts = line.split_whitespace();
+        //
+        let cards = parts.next().unwrap();
+        let bid = parts.next().unwrap().parse::<u32>().unwrap();
+        // println!(
+        //     "cards: {}, counts: {}, hand: {}",
+        //     cards,
+        //     get_card_counts(cards.chars().collect::<Vec<_>>())
+        //         .iter()
+        //         .fold(String::new(), |a, v| a + &v.to_string()),
+        //     get_hand(cards)
+        // );
+        println!(
+            "cards: {}, hand: {}, bid: {}, rank: {}, winnings: {}",
+            cards,
+            hand_from_wildcards(cards),
+            bid,
+            idx + 1,
+            (idx + 1) as u32 * bid
+        );
+        sum += (idx + 1) as u32 * bid;
     }
-    let ends = seeds.into_iter().map(|n| walk_maps(n, &maps));
-    println!("min location: {}", ends.min().unwrap());
+    println!("total winnings: {}", sum);
 }
 
-fn get_seeds(seed_line: &str) -> Vec<i64> {
-    let parts = seed_line.split_whitespace();
-    let mut nums = Vec::new();
-    for part in parts {
-        if let Ok(n) = part.parse::<i64>() {
-            nums.push(n);
-        }
-    }
-    nums
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+enum Hand {
+    FiveKind,
+    FourKind,
+    FullHouse,
+    ThreeKind,
+    TwoPair,
+    OnePair,
+    HighCard,
 }
 
-fn walk_maps(seed: i64, maps: &Vec<Vec<Ranges>>) -> i64 {
-    let mut curr = seed;
-    'outer: for map in maps {
-        for range in map {
-            if range.src <= curr && curr < range.src + range.len {
-                curr = range.dest + (curr - range.src);
-                continue 'outer;
+impl fmt::Display for Hand {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Hand::FiveKind => "Five of a Kind",
+                Hand::FourKind => "Four of a Kind",
+                Hand::FullHouse => "Full House",
+                Hand::ThreeKind => "Three of a Kind",
+                Hand::TwoPair => "Two Pair",
+                Hand::OnePair => "One Pair",
+                Hand::HighCard => "High Card",
+            }
+        )
+    }
+}
+
+fn compare_cards(hand1: &str, hand2: &str) -> Ordering {
+    let ranks = "AKQT98765432J";
+    let pairs = hand1.chars().zip(hand2.chars());
+    for (a, b) in pairs {
+        match ranks.find(a).partial_cmp(&ranks.find(b)).unwrap() {
+            Ordering::Equal => continue,
+            _ => return ranks.find(a).partial_cmp(&ranks.find(b)).unwrap(),
+        }
+    }
+    Ordering::Equal
+}
+
+fn get_hand(cards: &str) -> Hand {
+    let cards_chars = cards.chars().collect::<Vec<_>>();
+
+    let counts = get_card_counts(cards_chars.clone());
+    match counts.iter().max().unwrap() {
+        5 => Hand::FiveKind,
+        4 => Hand::FourKind,
+        3 => {
+            if is_full_house(cards) {
+                Hand::FullHouse
+            } else {
+                Hand::ThreeKind
             }
         }
+        2 => {
+            if is_two_pair(counts) {
+                Hand::TwoPair
+            } else {
+                Hand::TwoPair
+            }
+        }
+        1 => Hand::HighCard,
+        _ => panic!(
+            "Zero counts on {}",
+            cards_chars
+                .iter()
+                .fold(String::new(), |a, v| a + &v.to_string())
+        ),
     }
-    curr
+    // for ele in cards {}
 }
 
-fn get_ranges(number_line: &str) -> Ranges {
-    let nums = number_line.split_whitespace();
-    let nums_parsed = nums
-        .map(|n| n.parse::<i64>().unwrap())
-        .collect::<Vec<i64>>();
-    Ranges {
-        dest: nums_parsed[0],
-        src: nums_parsed[1],
-        len: nums_parsed[2],
+fn hand_from_wildcards(cards: &str) -> Hand {
+    let mut uniques = std::collections::HashMap::new();
+    for card in cards.chars().filter(|c| c != &'J') {
+        if let Some(n) = uniques.get(&card) {
+            uniques.insert(card, n + 1);
+        } else {
+            uniques.insert(card, 1);
+        }
     }
+    match uniques.len() {
+        0 => Hand::FiveKind,
+        1 => Hand::FiveKind,
+        2 => {
+            if uniques.values().all(|v| v != &1) {
+                Hand::FullHouse
+            } else {
+                Hand::FourKind
+            }
+        }
+        3 => {
+            if is_three_kind(&uniques) {
+                Hand::ThreeKind
+            } else {
+                Hand::TwoPair
+            }
+        }
+        4 => Hand::OnePair,
+        _ => Hand::HighCard,
+    }
+}
+
+fn is_three_kind(uniques: &std::collections::HashMap<char, i32>) -> bool {
+    let mut twos = 0;
+    let mut threes = 0;
+    for v in uniques.values() {
+        match v {
+            2 => twos += 1,
+            3 => threes += 1,
+            _ => continue,
+        }
+    }
+    threes > 0 || twos < 2
+}
+
+fn get_card_counts(cards: Vec<char>) -> Vec<usize> {
+    cards
+        .iter()
+        .map(|c| cards.iter().filter(|&ci| ci == c || ci == &'J').count())
+        .collect::<Vec<_>>()
+}
+
+fn is_two_pair(counts: Vec<usize>) -> bool {
+    let mut twos = 0;
+    for count in counts {
+        if count == 2 {
+            twos += 1;
+        }
+    }
+    twos == 4
+}
+
+fn is_full_house(cards: &str) -> bool {
+    let mut threes = 0;
+    let mut twos = 0;
+
+    let mut uniques = std::collections::HashMap::new();
+    for card in cards.chars().filter(|c| c != &'J') {
+        if let Some(n) = uniques.get(&card) {
+            uniques.insert(card, n + 1);
+        } else {
+            uniques.insert(card, 1);
+        }
+    }
+    uniques.len() == 2 && uniques.values().all(|v| v == &2 || v == &3)
+    // for count in counts {
+    //     if count == 3 {
+    //         threes += 1;
+    //     } else if count == 2 {
+    //         twos += 1;
+    //     }
+    // }
+    // threes == 3 && twos == 2
 }
