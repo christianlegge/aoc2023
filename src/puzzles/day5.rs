@@ -42,6 +42,10 @@ struct Ranges {
     len: i64,
 }
 
+struct SeedMap {}
+
+struct Maps {}
+
 pub fn solve(data: String) {
     let mut lines = data.split("\n");
     let seeds = get_seeds(lines.next().unwrap());
