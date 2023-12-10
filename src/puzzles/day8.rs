@@ -62,31 +62,45 @@ pub fn solve(data: String) {
     }
     println!("steps to reach ZZZ: {}", steps);
 
-    steps = 0;
-    seq_chars = sequence.chars();
-    while !heres.iter().all(|k| k.ends_with("Z")) {
+    for here in heres {
+        println!(
+            "steps to reach end from {}: {}",
+            here,
+            steps_to_end(here, sequence, &map)
+        );
+    }
+
+    // println!("steps to reach all end in Z: {}", steps);
+}
+
+fn steps_to_end(
+    start: &str,
+    seq: &str,
+    map: &std::collections::HashMap<&str, (&str, &str)>,
+) -> u32 {
+    let mut steps = 0;
+    let mut seq_chars = seq.chars();
+    let mut here = start;
+
+    while !here.ends_with("Z") {
         if let Some(dir) = seq_chars.next() {
             // print!("\nHeres:");
             // for here in &heres {
             //     print!(" {}", here);
             // }
-            if steps % 500000 == 0 {
-                println!("steps: {}", steps);
-            }
-            let mut new_heres = std::collections::HashSet::new();
-            for here in heres {
-                let paths = map.get(here).unwrap();
-                new_heres.insert(match dir {
-                    'L' => paths.0,
-                    'R' => paths.1,
-                    _ => panic!("invalid dir"),
-                });
-            }
+            // if steps % 500000 == 0 {
+            //     println!("steps: {}", steps);
+            // }
+            let paths = map.get(here).unwrap();
+            here = match dir {
+                'L' => paths.0,
+                'R' => paths.1,
+                _ => panic!("invalid dir"),
+            };
             steps += 1;
-            heres = new_heres;
         } else {
-            seq_chars = sequence.chars();
+            seq_chars = seq.chars();
         }
     }
-    println!("steps to reach all end in Z: {}", steps);
+    steps
 }
