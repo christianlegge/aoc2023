@@ -1,4 +1,32 @@
 #[test]
+fn test_overlap() {
+    assert_eq!(get_overlap(0, 10, 2, 8), Overlap::BothOverlap(2, 2));
+    assert_eq!(get_overlap(0, 10, 5, 15), Overlap::LeftOverlap(5));
+    assert_eq!(get_overlap(0, 10, -5, 15), Overlap::Contained);
+    assert_eq!(get_overlap(0, 10, 11, 20), Overlap::Disjoint);
+    assert_eq!(get_overlap(0, 10, -5, 8), Overlap::RightOverlap(8));
+}
+#[test]
+fn test_maps() {
+    let range = MapRange {
+        src: 0,
+        dest: 10,
+        len: 9,
+    };
+    let range2 = MapRange {
+        src: 50,
+        dest: 150,
+        len: 9,
+    };
+    let seed_map = SeedMap {
+        ranges: vec![range, range2],
+    };
+
+    dbg!(seed_map.get_out_ranges(&InputRange {
+        start: -5,
+        len: 200
+    }));
+}
 fn test() {
     solve(String::from(
         "seeds: 79 14 55 13
@@ -36,15 +64,126 @@ humidity-to-location map:
 56 93 4",
     ));
 }
-struct Ranges {
+
+#[derive(Debug, PartialEq)]
+enum Overlap {
+    Disjoint,
+    LeftOverlap(i64),
+    Contained,
+    RightOverlap(i64),
+    BothOverlap(i64, i64),
+}
+
+fn get_overlap(start: i64, end: i64, other_start: i64, other_end: i64) -> Overlap {
+    println!(
+        "getting overlap between ({}..{}) and ({}..{})",
+        start, end, other_start, other_end
+    );
+    if end < other_start || start > other_end {
+        dbg!(Overlap::Disjoint)
+    } else if start < other_start && end <= other_end {
+        dbg!(Overlap::LeftOverlap(end - other_start))
+    } else if start >= other_start && end <= other_end {
+        dbg!(Overlap::Contained)
+    } else if start >= other_start && end > other_end {
+        dbg!(Overlap::RightOverlap(other_end - start))
+    } else if start < other_start && end > other_end {
+        dbg!(Overlap::BothOverlap(other_start - start, end - other_end))
+    } else {
+        panic!(
+            "Error calculating overlap: ({}..{}) ({}..{})",
+            start, end, other_start, other_end
+        );
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+struct InputRange {
+    start: i64,
+    len: i64,
+}
+
+struct MapRange {
     dest: i64,
     src: i64,
     len: i64,
 }
 
-struct SeedMap {}
+struct SeedMap {
+    ranges: Vec<MapRange>,
+}
 
-struct Maps {}
+impl SeedMap {
+    fn get_out_ranges(&self, in_range: &InputRange) -> Vec<InputRange> {
+        let mut out_ranges = Vec::new();
+        let mut leftovers: Vec<InputRange> = vec![in_range.to_owned()];
+        for range in &self.ranges {
+            let mut new_leftovers: Vec<InputRange> = Vec::new();
+            for leftover in leftovers {
+                match get_overlap(
+                    leftover.start,
+                    leftover.start + leftover.len,
+                    range.src,
+                    range.src + range.len,
+                ) {
+                    Overlap::Disjoint => {
+                        new_leftovers.push(leftover);
+                    }
+                    Overlap::LeftOverlap(n) => {
+                        out_ranges.push(InputRange {
+                            start: range.dest,
+                            len: n,
+                        });
+                        new_leftovers.push(InputRange {
+                            start: leftover.start,
+                            len: range.src - leftover.start,
+                        });
+                    }
+                    Overlap::Contained => {
+                        out_ranges.push(InputRange {
+                            start: range.dest + (leftover.start - range.src),
+                            len: leftover.len,
+                        });
+                    }
+                    Overlap::RightOverlap(n) => {
+                        out_ranges.push(InputRange {
+                            start: leftover.start,
+                            len: n,
+                        });
+                        new_leftovers.push(InputRange {
+                            start: range.src + range.len,
+                            len: leftover.start + leftover.len - (range.src + range.len),
+                        });
+                    }
+                    Overlap::BothOverlap(l, r) => {
+                        out_ranges.push(InputRange {
+                            start: range.dest,
+                            len: range.len,
+                        });
+                        new_leftovers.push(InputRange {
+                            start: leftover.start,
+                            len: l,
+                        });
+                        new_leftovers.push(InputRange {
+                            start: range.dest + range.len,
+                            len: r,
+                        });
+                    }
+                }
+            }
+            leftovers = new_leftovers;
+        }
+        [out_ranges, leftovers].concat()
+    }
+}
+
+struct Maps {
+    maps: Vec<SeedMap>,
+}
+
+impl Maps {
+    fn walk_maps(&self, start: MapRange) {}
+}
 
 pub fn solve(data: String) {
     let mut lines = data.split("\n");
@@ -74,7 +213,7 @@ fn get_seeds(seed_line: &str) -> Vec<i64> {
     nums
 }
 
-fn walk_maps(seed: i64, maps: &Vec<Vec<Ranges>>) -> i64 {
+fn walk_maps(seed: i64, maps: &Vec<Vec<MapRange>>) -> i64 {
     let mut curr = seed;
     'outer: for map in maps {
         for range in map {
@@ -87,12 +226,12 @@ fn walk_maps(seed: i64, maps: &Vec<Vec<Ranges>>) -> i64 {
     curr
 }
 
-fn get_ranges(number_line: &str) -> Ranges {
+fn get_ranges(number_line: &str) -> MapRange {
     let nums = number_line.split_whitespace();
     let nums_parsed = nums
         .map(|n| n.parse::<i64>().unwrap())
         .collect::<Vec<i64>>();
-    Ranges {
+    MapRange {
         dest: nums_parsed[0],
         src: nums_parsed[1],
         len: nums_parsed[2],
