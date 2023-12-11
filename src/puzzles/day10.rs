@@ -1,13 +1,17 @@
-use core::fmt::{self, Display};
+use std::collections::HashSet;
 
 #[test]
 fn test() {
     solve(String::from(
-        "..F7.
-.FJ|.
-SJ.L7
-|F--J
-LJ...",
+        "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........",
     ));
 }
 
@@ -16,17 +20,13 @@ struct PipeMap {
     height: usize,
     tiles: Vec<Vec<char>>,
     start: Coords,
+    path_tiles: HashSet<Coords>,
 }
 
+#[derive(Eq, Hash, PartialEq, Copy, Clone)]
 struct Coords {
     x: usize,
     y: usize,
-}
-
-impl PartialEq for Coords {
-    fn eq(&self, other: &Coords) -> bool {
-        self.x == other.x && self.y == other.y
-    }
 }
 
 enum Direction {
@@ -45,8 +45,9 @@ impl PipeMap {
         }
     }
 
-    fn walk_path(&self) -> usize {
+    fn walk_path(&mut self) -> usize {
         let mut length = 1;
+        self.path_tiles.insert(self.start);
         let (mut next, mut dir) = if self.start.x > 0
             && get_valid_tiles(&Direction::Right)
                 .contains(self.tiles[self.start.y][self.start.x - 1])
@@ -94,10 +95,42 @@ impl PipeMap {
             panic!("error finding first tile");
         };
         while next != self.start {
+            self.path_tiles.insert(next);
             (next, dir) = self.find_next(&dir, &next);
             length += 1;
         }
         length
+    }
+
+    fn count_enclosing(&self) -> usize {
+        let mut inside = false;
+        let mut horizontal = None;
+        let mut count = 0;
+        for (y, row) in self.tiles.iter().enumerate() {
+            for (x, tile) in row.iter().enumerate() {
+                if self.path_tiles.contains(&Coords { x, y }) {
+                    match (tile, &horizontal) {
+                        ('|', _) => inside = !inside,
+                        ('F', _) => horizontal = Some(Direction::Down),
+                        ('L', _) => horizontal = Some(Direction::Up),
+                        ('7', Some(Direction::Up)) => {
+                            horizontal = None;
+                            inside = !inside;
+                        }
+                        ('7', Some(Direction::Down)) => horizontal = None,
+                        ('J', Some(Direction::Down)) => {
+                            horizontal = None;
+                            inside = !inside;
+                        }
+                        ('J', Some(Direction::Up)) => horizontal = None,
+                        (_, _) => continue,
+                    }
+                } else if inside {
+                    count += 1;
+                }
+            }
+        }
+        count
     }
 
     fn find_next(&self, from_dir: &Direction, cur_tile: &Coords) -> (Coords, Direction) {
@@ -205,14 +238,16 @@ pub fn solve(data: String) {
         rows.push(chars);
     }
 
-    let map = PipeMap {
+    let mut map = PipeMap {
         start,
         width: lines[0].len(),
         height: lines.len(),
         tiles: rows,
+        path_tiles: HashSet::new(),
     };
     map.print();
     println!("path length: {}", map.walk_path());
+    println!("enclosed tiles: {}", map.count_enclosing());
 }
 fn get_valid_tiles(from_dir: &Direction) -> &str {
     match from_dir {
