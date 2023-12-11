@@ -58,14 +58,22 @@ impl GalaxyMap {
     fn measure_distance(&self, g1: &Coords, g2: &Coords) -> usize {
         let initial = g1.x.abs_diff(g2.x) + g1.y.abs_diff(g2.y);
 
-        let expand = (g1.x..g2.x)
-            .filter(|v| !self.occupied_cols.contains(v.try_into().unwrap()))
-            .count()
-            + (g1.y..g2.y)
-                .filter(|v| !self.occupied_rows.contains(v.try_into().unwrap()))
-                .count();
+        let expand = if g1.x < g2.x {
+            (g1.x..g2.x)
+        } else {
+            (g2.x..g1.x)
+        }
+        .filter(|v| !self.occupied_cols.contains(v.try_into().unwrap()))
+        .count()
+            + if g1.y < g2.y {
+                (g1.y..g2.y)
+            } else {
+                (g2.y..g1.y)
+            }
+            .filter(|v| !self.occupied_rows.contains(v.try_into().unwrap()))
+            .count();
 
-        initial + expand
+        initial + expand * 999999
     }
 
     fn find_distances(&self) -> usize {
