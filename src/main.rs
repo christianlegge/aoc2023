@@ -46,6 +46,9 @@ fn main() {
                     "day10" => {
                         day10::solve(data);
                     }
+                    "day11" => {
+                        day11::solve(data);
+                    }
                     _ => {
                         println!("Invalid argument: {}", args[1]);
                     }
