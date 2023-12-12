@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::HashSet;
 
 #[test]
 fn test() {
@@ -24,8 +24,6 @@ struct Coords {
 
 struct GalaxyMap {
     galaxies: Vec<Coords>,
-    width: usize,
-    height: usize,
     occupied_rows: HashSet<usize>,
     occupied_cols: HashSet<usize>,
 }
@@ -50,28 +48,18 @@ impl GalaxyMap {
             galaxies,
             occupied_cols,
             occupied_rows,
-            width: data.lines().next().unwrap().len(),
-            height: data.lines().count(),
         }
     }
 
     fn measure_distance(&self, g1: &Coords, g2: &Coords) -> usize {
         let initial = g1.x.abs_diff(g2.x) + g1.y.abs_diff(g2.y);
 
-        let expand = if g1.x < g2.x {
-            g1.x..g2.x
-        } else {
-            g2.x..g1.x
-        }
-        .filter(|v| !self.occupied_cols.contains(v.try_into().unwrap()))
-        .count()
-            + if g1.y < g2.y {
-                g1.y..g2.y
-            } else {
-                g2.y..g1.y
-            }
-            .filter(|v| !self.occupied_rows.contains(v.try_into().unwrap()))
-            .count();
+        let expand = if g1.x < g2.x { g1.x..g2.x } else { g2.x..g1.x }
+            .filter(|v| !self.occupied_cols.contains(v.try_into().unwrap()))
+            .count()
+            + if g1.y < g2.y { g1.y..g2.y } else { g2.y..g1.y }
+                .filter(|v| !self.occupied_rows.contains(v.try_into().unwrap()))
+                .count();
 
         initial + expand * 999999
     }

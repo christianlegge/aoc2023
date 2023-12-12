@@ -244,7 +244,7 @@ fn get_seeds(seed_line: &str) -> Vec<i64> {
     nums
 }
 
-fn walk_maps(seed: i64, maps: &Vec<Vec<MapRange>>) -> i64 {
+fn _walk_maps(seed: i64, maps: &Vec<Vec<MapRange>>) -> i64 {
     let mut curr = seed;
     'outer: for map in maps {
         for range in map {

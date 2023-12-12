@@ -32,14 +32,14 @@ pub fn solve(data: String) {
         //
         let cards = parts.next().unwrap();
         let bid = parts.next().unwrap().parse::<u32>().unwrap();
-        // println!(
-        //     "cards: {}, counts: {}, hand: {}",
-        //     cards,
-        //     get_card_counts(cards.chars().collect::<Vec<_>>())
-        //         .iter()
-        //         .fold(String::new(), |a, v| a + &v.to_string()),
-        //     get_hand(cards)
-        // );
+        println!(
+            "cards: {}, counts: {}, hand: {}",
+            cards,
+            get_card_counts(cards.chars().collect::<Vec<_>>())
+                .iter()
+                .fold(String::new(), |a, v| a + &v.to_string()),
+            get_hand(cards)
+        );
         println!(
             "cards: {}, hand: {}, bid: {}, rank: {}, winnings: {}",
             cards,
