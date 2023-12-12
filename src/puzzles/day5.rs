@@ -1,6 +1,10 @@
 #[test]
 fn test_overlap() {
     assert_eq!(get_overlap(0, 10, 2, 8), Overlap::BothOverlap(2, 2));
+    assert_eq!(
+        get_overlap(100, 500, 300, 400),
+        Overlap::BothOverlap(200, 100)
+    );
     assert_eq!(get_overlap(0, 10, 5, 15), Overlap::LeftOverlap(5));
     assert_eq!(get_overlap(0, 10, -5, 15), Overlap::Contained);
     assert_eq!(get_overlap(0, 10, 11, 20), Overlap::Disjoint);
@@ -27,6 +31,7 @@ fn test_maps() {
         len: 200
     }));
 }
+#[test]
 fn test() {
     solve(String::from(
         "seeds: 79 14 55 13
@@ -103,6 +108,7 @@ struct InputRange {
     len: i64,
 }
 
+#[derive(Debug)]
 struct MapRange {
     dest: i64,
     src: i64,
@@ -118,8 +124,12 @@ impl SeedMap {
         let mut out_ranges = Vec::new();
         let mut leftovers: Vec<InputRange> = vec![in_range.to_owned()];
         for range in &self.ranges {
+            // print!("Range: ");
+            // dbg!(range);
             let mut new_leftovers: Vec<InputRange> = Vec::new();
             for leftover in leftovers {
+                // print!("Leftover: ");
+                // dbg!(leftover);
                 match get_overlap(
                     leftover.start,
                     leftover.start + leftover.len,
@@ -165,7 +175,7 @@ impl SeedMap {
                             len: l,
                         });
                         new_leftovers.push(InputRange {
-                            start: range.dest + range.len,
+                            start: range.src + range.len,
                             len: r,
                         });
                     }
@@ -182,24 +192,45 @@ struct Maps {
 }
 
 impl Maps {
-    fn walk_maps(&self, start: MapRange) {}
+    fn walk_maps(&self, start: Vec<InputRange>) -> Vec<InputRange> {
+        let mut intermediate_ranges = start;
+        for map in &self.maps {
+            intermediate_ranges = intermediate_ranges
+                .iter()
+                .flat_map(|r| map.get_out_ranges(r))
+                .collect();
+        }
+        intermediate_ranges
+    }
 }
 
 pub fn solve(data: String) {
     let mut lines = data.split("\n");
     let seeds = get_seeds(lines.next().unwrap());
-    let mut maps = Vec::new();
+    let mut maps = Maps { maps: Vec::new() };
     for line in lines {
         if line.contains("map:") {
-            maps.push(Vec::new());
+            maps.maps.push(SeedMap { ranges: Vec::new() });
         } else if line.trim() == "" {
             continue;
         } else {
-            maps.last_mut().unwrap().push(get_ranges(line));
+            maps.maps.last_mut().unwrap().ranges.push(get_ranges(line));
         }
     }
-    let ends = seeds.into_iter().map(|n| walk_maps(n, &maps));
-    println!("min location: {}", ends.min().unwrap());
+    // let ends = seeds.into_iter().map(|n| walk_maps(n, &maps));
+    // println!("min location: {}", ends.min().unwrap());
+    let inputs = data.lines().next().unwrap();
+    let input_pairs = inputs.split_whitespace().skip(1).collect::<Vec<_>>();
+    let mut input_ranges = Vec::new();
+    for pair in input_pairs.chunks(2) {
+        input_ranges.push(InputRange {
+            start: pair[0].parse().unwrap(),
+            len: pair[1].parse().unwrap(),
+        });
+    }
+    let out_ranges = maps.walk_maps(input_ranges);
+    let min_start = out_ranges.iter().map(|r| r.start).min().unwrap();
+    println!("min: {}", min_start);
 }
 
 fn get_seeds(seed_line: &str) -> Vec<i64> {
