@@ -206,7 +206,7 @@ impl Maps {
 
 pub fn solve(data: String) {
     let mut lines = data.split("\n");
-    let seeds = get_seeds(lines.next().unwrap());
+    let _seeds = get_seeds(lines.next().unwrap());
     let mut maps = Maps { maps: Vec::new() };
     for line in lines {
         if line.contains("map:") {

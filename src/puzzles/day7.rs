@@ -188,8 +188,8 @@ fn is_two_pair(counts: Vec<usize>) -> bool {
 }
 
 fn is_full_house(cards: &str) -> bool {
-    let mut threes = 0;
-    let mut twos = 0;
+    let _threes = 0;
+    let _twos = 0;
 
     let mut uniques = std::collections::HashMap::new();
     for card in cards.chars().filter(|c| c != &'J') {

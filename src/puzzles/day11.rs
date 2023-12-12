@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 
 #[test]
 fn test() {
@@ -59,16 +59,16 @@ impl GalaxyMap {
         let initial = g1.x.abs_diff(g2.x) + g1.y.abs_diff(g2.y);
 
         let expand = if g1.x < g2.x {
-            (g1.x..g2.x)
+            g1.x..g2.x
         } else {
-            (g2.x..g1.x)
+            g2.x..g1.x
         }
         .filter(|v| !self.occupied_cols.contains(v.try_into().unwrap()))
         .count()
             + if g1.y < g2.y {
-                (g1.y..g2.y)
+                g1.y..g2.y
             } else {
-                (g2.y..g1.y)
+                g2.y..g1.y
             }
             .filter(|v| !self.occupied_rows.contains(v.try_into().unwrap()))
             .count();
