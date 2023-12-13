@@ -51,8 +51,10 @@ impl Grid {
     }
 
     fn get_mirror_lines(&self) -> MirrorLines {
-        let horizontal_axis = find_mirror_point(self.rows.as_slice());
-        let vertical_axis = find_mirror_point(self.cols.as_slice());
+        let horizontal_axis =
+            find_mirror_point(self.rows.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let vertical_axis =
+            find_mirror_point(self.cols.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
         if horizontal_axis > 0 {
             dbg!(MirrorLines::Horizontal(horizontal_axis))
@@ -63,9 +65,42 @@ impl Grid {
             panic!("axis not found^");
         }
     }
+
+    fn find_smudge_line(&self, original: MirrorLines) -> MirrorLines {
+        let grid = self.rows.join("\n");
+        let new_rows = self.rows.clone();
+
+        for (idx, char) in grid.char_indices() {
+            if char == '#' || char == '.' {
+                let mut new_grid = grid.clone();
+                new_grid.replace_range(idx..idx + 1, if char == '#' { "." } else { "#" });
+
+                let new_axis = find_mirror_point(new_grid.split("\n").collect::<Vec<_>>());
+                if new_axis > 0 && MirrorLines::Horizontal(new_axis) != original {
+                    return MirrorLines::Horizontal(new_axis);
+                }
+            }
+        }
+        let grid = self.cols.join("\n");
+        let new_cols = self.cols.clone();
+
+        for (idx, char) in grid.char_indices() {
+            if char == '#' || char == '.' {
+                let mut new_grid = grid.clone();
+                new_grid.replace_range(idx..idx + 1, if char == '#' { "." } else { "#" });
+
+                let new_axis = find_mirror_point(new_grid.split("\n").collect::<Vec<_>>());
+                if new_axis > 0 && MirrorLines::Vertical(new_axis) != original {
+                    return MirrorLines::Vertical(new_axis);
+                }
+            }
+        }
+
+        panic!("smudge line not found");
+    }
 }
 
-fn find_mirror_point(lines: &[String]) -> usize {
+fn find_mirror_point(lines: Vec<&str>) -> usize {
     let mut axis = 1;
     while axis < lines.len() {
         let mut mirrored_lines = 0;
@@ -95,7 +130,7 @@ fn find_mirror_point(lines: &[String]) -> usize {
     0
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum MirrorLines {
     Horizontal(usize),
     Vertical(usize),
@@ -105,13 +140,20 @@ pub fn solve(data: String) {
     println!("{}", data);
     let patterns = data.split("\n\n");
     let mut sum = 0;
+    let mut smudge_sum = 0;
     for pattern in patterns {
         let grid = Grid::new(pattern);
-        match grid.get_mirror_lines() {
+        let mirror_line = grid.get_mirror_lines();
+        match mirror_line {
             MirrorLines::Vertical(n) => sum += n,
             MirrorLines::Horizontal(n) => sum += 100 * n,
+        }
+        match grid.find_smudge_line(mirror_line) {
+            MirrorLines::Vertical(n) => smudge_sum += n,
+            MirrorLines::Horizontal(n) => smudge_sum += 100 * n,
         }
         grid.print();
     }
     println!("sum: {}", sum);
+    println!("smudge_sum: {}", smudge_sum);
 }
