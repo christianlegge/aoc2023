@@ -22,8 +22,8 @@ fn test() {
 struct Grid {
     rows: Vec<String>,
     cols: Vec<String>,
-    width: usize,
-    height: usize,
+    // width: usize,
+    // height: usize,
 }
 
 impl Grid {
@@ -39,8 +39,8 @@ impl Grid {
         }
 
         Grid {
-            height: rows.len(),
-            width: cols.len(),
+            // height: rows.len(),
+            // width: cols.len(),
             rows,
             cols,
         }
@@ -72,7 +72,7 @@ impl Grid {
 
     fn find_smudge_line(&self, original: MirrorLines) -> MirrorLines {
         let grid = self.rows.join("\n");
-        let new_rows = self.rows.clone();
+        // let new_rows = self.rows.clone();
 
         for (idx, char) in grid.char_indices() {
             if char == '#' || char == '.' {
@@ -91,7 +91,7 @@ impl Grid {
             }
         }
         let grid = self.cols.join("\n");
-        let new_cols = self.cols.clone();
+        // let new_cols = self.cols.clone();
 
         for (idx, char) in grid.char_indices() {
             if char == '#' || char == '.' {

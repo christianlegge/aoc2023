@@ -5,5 +5,7 @@ fn test() {
 
 pub fn solve(data: String) {
     println!("{}", data);
-    for line in data.lines() {}
+    for line in data.lines() {
+        println!("{}", line);
+    }
 }

@@ -26,7 +26,7 @@ enum SpringRun {
 #[derive(Debug)]
 struct SpringRow {
     spring_runs: Vec<SpringRun>,
-    springs: Vec<char>,
+    // springs: Vec<char>,
     groups: Vec<u32>,
 }
 
@@ -66,7 +66,7 @@ impl SpringRow {
 
         SpringRow {
             spring_runs: runs,
-            springs: spring_chars,
+            // springs: spring_chars,
             groups: groups
                 .split(",")
                 .map(|s| s.parse().unwrap())
@@ -131,19 +131,19 @@ fn count_valid_configurations(data: &str) -> usize {
     }
 }
 
-fn remove_first_question(data: &str) -> String {
-    data.chars()
-        .skip_while(|c| c != &'?')
-        .skip(1)
-        .collect::<String>()
-}
+// fn remove_first_question(data: &str) -> String {
+//     data.chars()
+//         .skip_while(|c| c != &'?')
+//         .skip(1)
+//         .collect::<String>()
+// }
 
 pub fn solve(data: String) {
     println!("{}", data);
     let mut sum = 0;
     for line in data.lines() {
-        let row = SpringRow::new(line);
-        let mut parts = line.split_whitespace();
+        // let row = SpringRow::new(line);
+        // let mut parts = line.split_whitespace();
         // let springs = parts.next().unwrap().repeat(5);
         // let groups = parts.next().unwrap().repeat(5);
         // let configs = count_valid_configurations(&format!("{} {}", springs, groups));
