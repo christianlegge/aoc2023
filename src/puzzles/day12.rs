@@ -9,6 +9,7 @@ fn test() {
 ????.#...#... 4,1,1
 ????.######..#####. 1,6,5
 ?###???????? 3,2,1",
+        // "## 2,1",
     ));
 }
 #[test]
@@ -16,17 +17,18 @@ fn test2() {
     dbg!(count_valid_configurations("?###???????? 3,2,1"));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SpringRun {
     Operational(u32),
     Damaged(u32),
     Unknown(u32),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct SpringRow {
+    inside_group: bool,
     spring_runs: Vec<SpringRun>,
-    // springs: Vec<char>,
+    springs: String,
     groups: Vec<u32>,
 }
 
@@ -65,8 +67,9 @@ impl SpringRow {
         });
 
         SpringRow {
+            inside_group: false,
             spring_runs: runs,
-            // springs: spring_chars,
+            springs: springs.to_string(),
             groups: groups
                 .split(",")
                 .map(|s| s.parse().unwrap())
@@ -100,6 +103,87 @@ impl SpringRow {
             } else {
                 Some(false)
             }
+        }
+    }
+
+    fn to_str(&self) -> String {
+        let mut str = self.springs.clone();
+        for i in &self.groups {
+            str.push_str(format!("{},", i).as_str());
+        }
+        str
+    }
+
+    fn try_consume_group(&self, depth: usize, start: &str) -> usize {
+        let indent = "  ".repeat(depth);
+        let mut start_chunk = String::from(start);
+        println!("{}try_consume_group {}/{}", indent, start, self.to_str());
+        let mut self_clone = self.clone();
+
+        for char in self_clone.springs.clone().chars() {
+            match char {
+                '.' => {
+                    self_clone.springs.remove(0);
+                    start_chunk.push('.');
+                    if let Some(0) = self_clone.groups.first() {
+                        self_clone.inside_group = false;
+                        //println!("{}removing 0 group", indent);
+                        self_clone.groups.remove(0);
+                    } else {
+                        if self_clone.inside_group {
+                            return 0;
+                        }
+                        continue;
+                    }
+                    // } else if self_clone.groups.len() == 0 {
+                    //     //println!("{}parsing . with no groups left", indent);
+                    //     continue;
+                    // } else {
+                    //     //println!("{}. found with groups left", indent);
+                    //
+                    //     return 0;
+                    // }
+                }
+                '#' => {
+                    self_clone.springs.remove(0);
+                    start_chunk.push('#');
+                    self_clone.inside_group = true;
+                    if let Some(n) = self_clone.groups.first_mut() {
+                        if *n == 0 {
+                            println!("{}FAILED", indent);
+                            return 0;
+                        }
+                        // println!("{}# found - decreasing group", indent);
+                        *n -= 1
+                    } else {
+                        println!("{}FAILED", indent);
+                        return 0;
+                    }
+                }
+                '?' => {
+                    let mut filled = self_clone.clone();
+                    let mut empty = self_clone.clone();
+                    filled.springs = filled.springs.replacen("?", "#", 1);
+                    empty.springs = empty.springs.replacen("?", ".", 1);
+                    return filled.try_consume_group(depth + 1, start_chunk.as_str())
+                        + empty.try_consume_group(depth + 1, start_chunk.as_str());
+                }
+                _ => panic!("unrecognized character {}", char),
+            }
+        }
+
+        if self_clone.groups.len() == 0
+            || (self_clone.groups.len() == 1 && *self_clone.groups.first().unwrap() == 0)
+        {
+            println!("valid configuration found: {}", start_chunk);
+            return 1;
+        } else {
+            println!("{}FAILED", indent);
+            println!(
+                "{}end of string reached with nonzero groups left - returning 0",
+                indent
+            );
+            return 0;
         }
     }
 }
@@ -139,15 +223,16 @@ fn count_valid_configurations(data: &str) -> usize {
 // }
 
 pub fn solve(data: String) {
-    println!("{}", data);
+    // println!("{}", data);
     let mut sum = 0;
     for line in data.lines() {
-        // let row = SpringRow::new(line);
+        let row = SpringRow::new(line);
         // let mut parts = line.split_whitespace();
         // let springs = parts.next().unwrap().repeat(5);
         // let groups = parts.next().unwrap().repeat(5);
         // let configs = count_valid_configurations(&format!("{} {}", springs, groups));
-        let configs = count_valid_configurations(line);
+        // let configs = count_valid_configurations(line);
+        let configs = row.try_consume_group(0, "");
         // dbg!(row);
         println!("valid configurations for {}: {}", line, configs);
         sum += configs;
