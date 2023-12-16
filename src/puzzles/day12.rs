@@ -41,6 +41,18 @@ impl SpringRow {
 
         let mut spring_chars = Vec::new();
 
+        let mut five_springs = String::from(springs);
+        let mut five_groups = String::from(groups);
+        for _ in 0..4 {
+            five_springs.push('?');
+            five_springs.push_str(springs);
+            five_groups.push(',');
+            five_groups.push_str(groups);
+        }
+
+        let springs = five_springs;
+        let groups = five_groups;
+
         let mut chars = springs.chars();
         let mut curr = chars.next().unwrap();
         let mut num = 1;
@@ -122,33 +134,15 @@ impl SpringRow {
         memo: &mut HashMap<String, usize>,
     ) -> usize {
         if let Some(n) = memo.get(self.to_str().as_str()) {
+            println!("saved function call: {} ({})", self.to_str(), n);
             return *n;
         }
         let indent = "  ".repeat(depth);
         let mut start_chunk = String::from(start);
-        println!("{}try_consume_group {}/{}", indent, start, self.to_str());
+        // println!("{}try_consume_group {}/{}", indent, start, self.to_str());
         let mut self_clone = self.clone();
 
         for char in self_clone.springs.clone().chars() {
-            let mut parse_filled = || {
-                self_clone.springs.remove(0);
-                start_chunk.push('#');
-                self_clone.inside_group = true;
-                if let Some(n) = self_clone.groups.first_mut() {
-                    if *n == 0 {
-                        println!("{}FAILED", indent);
-                        memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
-                        return Some(0);
-                    }
-                    // println!("{}# found - decreasing group", indent);
-                    *n -= 1
-                } else {
-                    println!("{}FAILED", indent);
-                    memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
-                    return Some(0);
-                }
-                None
-            };
             match char {
                 '.' => {
                     self_clone.springs.remove(0);
@@ -159,23 +153,29 @@ impl SpringRow {
                         self_clone.groups.remove(0);
                     } else {
                         if self_clone.inside_group {
-                            memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
+                            // println!("inserting {}/{} (0)", start_chunk, self_clone.to_str());
+                            // memo.insert(format!("{}{}", start_chunk, self_clone.to_str()), 0);
                             return 0;
                         }
                         continue;
                     }
-                    // } else if self_clone.groups.len() == 0 {
-                    //     //println!("{}parsing . with no groups left", indent);
-                    //     continue;
-                    // } else {
-                    //     //println!("{}. found with groups left", indent);
-                    //
-                    //     return 0;
-                    // }
                 }
                 '#' => {
-                    if let Some(n) = parse_filled() {
-                        return n;
+                    self_clone.springs.remove(0);
+                    start_chunk.push('#');
+                    self_clone.inside_group = true;
+                    if let Some(n) = self_clone.groups.first_mut() {
+                        if *n == 0 {
+                            // println!("{}FAILED", indent);
+                            memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
+                            return 0;
+                        }
+                        // println!("{}# found - decreasing group", indent);
+                        *n -= 1
+                    } else {
+                        // println!("{}FAILED", indent);
+                        memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
+                        return 0;
                     }
                 }
                 '?' => {
@@ -187,11 +187,13 @@ impl SpringRow {
                         filled.try_consume_group(depth + 1, start_chunk.as_str(), memo);
                     let empty_configs =
                         empty.try_consume_group(depth + 1, start_chunk.as_str(), memo);
+                    memo.insert(format!("{}", filled.to_str()), filled_configs);
+                    // memo.insert(format!("{}", empty.to_str()), empty_configs);
                     memo.insert(
-                        format!("{}{}", start_chunk, filled.to_str()),
-                        filled_configs,
+                        format!("{}", self_clone.to_str()),
+                        filled_configs + empty_configs,
                     );
-                    memo.insert(format!("{}{}", start_chunk, filled.to_str()), empty_configs);
+
                     return filled_configs + empty_configs;
                 }
                 _ => panic!("unrecognized character {}", char),
@@ -201,15 +203,15 @@ impl SpringRow {
         if self_clone.groups.len() == 0
             || (self_clone.groups.len() == 1 && *self_clone.groups.first().unwrap() == 0)
         {
-            println!("valid configuration found: {}", start_chunk);
+            // println!("valid configuration found: {}", start_chunk);
             memo.insert(format!("{}", start_chunk), 1);
             return 1;
         } else {
-            println!("{}FAILED", indent);
-            println!(
-                "{}end of string reached with nonzero groups left - returning 0",
-                indent
-            );
+            // println!("{}FAILED", indent);
+            // println!(
+            //     "{}end of string reached with nonzero groups left - returning 0",
+            //     indent
+            // );
             memo.insert(format!("{}", start_chunk), 0);
             return 0;
         }
@@ -263,7 +265,7 @@ pub fn solve(data: String) {
         // let configs = count_valid_configurations(line);
         let configs = row.try_consume_group(0, "", &mut memo);
         // dbg!(row);
-        println!("valid configurations for {}: {}", line, configs);
+        // println!("valid configurations for {}: {}", line, configs);
         sum += configs;
     }
     println!("total configs: {}", sum);
