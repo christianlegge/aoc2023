@@ -130,6 +130,25 @@ impl SpringRow {
         let mut self_clone = self.clone();
 
         for char in self_clone.springs.clone().chars() {
+            let mut parse_filled = || {
+                self_clone.springs.remove(0);
+                start_chunk.push('#');
+                self_clone.inside_group = true;
+                if let Some(n) = self_clone.groups.first_mut() {
+                    if *n == 0 {
+                        println!("{}FAILED", indent);
+                        memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
+                        return Some(0);
+                    }
+                    // println!("{}# found - decreasing group", indent);
+                    *n -= 1
+                } else {
+                    println!("{}FAILED", indent);
+                    memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
+                    return Some(0);
+                }
+                None
+            };
             match char {
                 '.' => {
                     self_clone.springs.remove(0);
@@ -155,21 +174,8 @@ impl SpringRow {
                     // }
                 }
                 '#' => {
-                    self_clone.springs.remove(0);
-                    start_chunk.push('#');
-                    self_clone.inside_group = true;
-                    if let Some(n) = self_clone.groups.first_mut() {
-                        if *n == 0 {
-                            println!("{}FAILED", indent);
-                            memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
-                            return 0;
-                        }
-                        // println!("{}# found - decreasing group", indent);
-                        *n -= 1
-                    } else {
-                        println!("{}FAILED", indent);
-                        memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
-                        return 0;
+                    if let Some(n) = parse_filled() {
+                        return n;
                     }
                 }
                 '?' => {
