@@ -1,4 +1,5 @@
 use core::panic;
+use std::collections::HashMap;
 
 #[test]
 fn test() {
@@ -114,7 +115,15 @@ impl SpringRow {
         str
     }
 
-    fn try_consume_group(&self, depth: usize, start: &str) -> usize {
+    fn try_consume_group(
+        &self,
+        depth: usize,
+        start: &str,
+        memo: &mut HashMap<String, usize>,
+    ) -> usize {
+        if let Some(n) = memo.get(self.to_str().as_str()) {
+            return *n;
+        }
         let indent = "  ".repeat(depth);
         let mut start_chunk = String::from(start);
         println!("{}try_consume_group {}/{}", indent, start, self.to_str());
@@ -131,6 +140,7 @@ impl SpringRow {
                         self_clone.groups.remove(0);
                     } else {
                         if self_clone.inside_group {
+                            memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
                             return 0;
                         }
                         continue;
@@ -151,12 +161,14 @@ impl SpringRow {
                     if let Some(n) = self_clone.groups.first_mut() {
                         if *n == 0 {
                             println!("{}FAILED", indent);
+                            memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
                             return 0;
                         }
                         // println!("{}# found - decreasing group", indent);
                         *n -= 1
                     } else {
                         println!("{}FAILED", indent);
+                        memo.insert(format!("{}{}", start_chunk, self_clone.springs), 0);
                         return 0;
                     }
                 }
@@ -165,8 +177,16 @@ impl SpringRow {
                     let mut empty = self_clone.clone();
                     filled.springs = filled.springs.replacen("?", "#", 1);
                     empty.springs = empty.springs.replacen("?", ".", 1);
-                    return filled.try_consume_group(depth + 1, start_chunk.as_str())
-                        + empty.try_consume_group(depth + 1, start_chunk.as_str());
+                    let filled_configs =
+                        filled.try_consume_group(depth + 1, start_chunk.as_str(), memo);
+                    let empty_configs =
+                        empty.try_consume_group(depth + 1, start_chunk.as_str(), memo);
+                    memo.insert(
+                        format!("{}{}", start_chunk, filled.to_str()),
+                        filled_configs,
+                    );
+                    memo.insert(format!("{}{}", start_chunk, filled.to_str()), empty_configs);
+                    return filled_configs + empty_configs;
                 }
                 _ => panic!("unrecognized character {}", char),
             }
@@ -176,6 +196,7 @@ impl SpringRow {
             || (self_clone.groups.len() == 1 && *self_clone.groups.first().unwrap() == 0)
         {
             println!("valid configuration found: {}", start_chunk);
+            memo.insert(format!("{}", start_chunk), 1);
             return 1;
         } else {
             println!("{}FAILED", indent);
@@ -183,6 +204,7 @@ impl SpringRow {
                 "{}end of string reached with nonzero groups left - returning 0",
                 indent
             );
+            memo.insert(format!("{}", start_chunk), 0);
             return 0;
         }
     }
@@ -225,6 +247,7 @@ fn count_valid_configurations(data: &str) -> usize {
 pub fn solve(data: String) {
     // println!("{}", data);
     let mut sum = 0;
+    let mut memo = HashMap::new();
     for line in data.lines() {
         let row = SpringRow::new(line);
         // let mut parts = line.split_whitespace();
@@ -232,7 +255,7 @@ pub fn solve(data: String) {
         // let groups = parts.next().unwrap().repeat(5);
         // let configs = count_valid_configurations(&format!("{} {}", springs, groups));
         // let configs = count_valid_configurations(line);
-        let configs = row.try_consume_group(0, "");
+        let configs = row.try_consume_group(0, "", &mut memo);
         // dbg!(row);
         println!("valid configurations for {}: {}", line, configs);
         sum += configs;
