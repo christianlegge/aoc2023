@@ -1,3 +1,7 @@
+use core::panic;
+use std::collections::VecDeque;
+
+use either::Either;
 use hashbrown::HashMap;
 
 #[test]
@@ -9,12 +13,18 @@ fn test() {
     // %c -> inv
     // &inv -> a",
     //     ));
+    //     solve(String::from(
+    //         "broadcaster -> a
+    // %a -> inv, con
+    // &inv -> b
+    // %b -> con
+    // &con -> output",
+    //     ));
     solve(String::from(
-        "broadcaster -> a
-%a -> inv, con
-&inv -> b
+        "broadcaster -> a, b
+%a -> con
 %b -> con
-&con -> output",
+&con -> rx",
     ));
 }
 
@@ -35,7 +45,7 @@ enum Pulse {
 struct Module {
     name: String,
     module_type: ModuleType,
-    pending: Option<Pulse>,
+    pending: Either<Option<Pulse>, VecDeque<Pulse>>,
     targets: Vec<String>,
 }
 
@@ -68,8 +78,12 @@ impl Module {
             .collect();
         Module {
             name,
+            pending: if matches!(module_type, ModuleType::Conjunction(_)) {
+                either::Right(VecDeque::new())
+            } else {
+                either::Left(None)
+            },
             module_type,
-            pending: None,
             targets,
         }
     }
@@ -79,19 +93,22 @@ impl Module {
         match (&mut self.module_type, pulse) {
             (Broadcaster, p) => {
                 // self.send_pulses(p);
-                self.pending = Some(p);
+                self.pending = either::Left(Some(p));
             }
             (FlipFlop(ref mut state), Pulse::Low) => {
                 *state = !*state;
-                self.pending = Some(if *state { Pulse::High } else { Pulse::Low });
+                self.pending = either::Left(Some(if *state { Pulse::High } else { Pulse::Low }));
             }
             (Conjunction(ref mut states), p) => {
+                println!("receiving pulse on {}", self.name);
                 states.insert(origin.to_string(), p);
-                self.pending = Some(if states.iter().all(|(_, p)| *p == Pulse::High) {
+                let to_send = if states.iter().all(|(_, p)| *p == Pulse::High) {
                     Pulse::Low
                 } else {
                     Pulse::High
-                });
+                };
+                self.pending.as_mut().right().unwrap().push_back(to_send);
+                dbg!(&self.pending);
                 // self.send_pulses(if states.iter().all(|(_, p)| *p == Pulse::High) {
                 //     Pulse::Low
                 // } else {
@@ -115,6 +132,27 @@ impl Module {
     //         }
     //     }
     // }
+
+    fn has_pending(&self) -> bool {
+        if let either::Left(pulse) = self.pending {
+            pulse.is_some()
+        } else if let either::Right(ref pulse_vec) = self.pending {
+            !pulse_vec.is_empty()
+        } else {
+            panic!("error in has_pending");
+        }
+    }
+
+    fn get_pending(&mut self) -> Option<Pulse> {
+        if let either::Left(pulse) = self.pending {
+            self.pending = either::Left(None);
+            pulse
+        } else if let either::Right(ref mut pulse_vec) = self.pending {
+            pulse_vec.pop_front()
+        } else {
+            panic!("error in get_pending");
+        }
+    }
 }
 
 impl ModuleArray {
@@ -126,38 +164,38 @@ impl ModuleArray {
     }
 
     fn push_button(&mut self) {
-        // println!("----------------------------");
+        println!("----------------------------");
         self.modules
             .get_mut("broadcaster")
             .unwrap()
             .receive_pulse("button", Pulse::Low);
         self.lows += 1;
-        // println!("button -low-> broadcaster");
-        while self.modules.iter().any(|(_, m)| m.pending.is_some()) {
+        println!("button -low-> broadcaster");
+        while self.modules.iter().any(|(_, m)| m.has_pending()) {
             self.tick();
         }
     }
 
     fn tick(&mut self) {
         for (name, targets) in self.module_map.clone() {
-            if let Some(pulse) = self.modules.get(&name).unwrap().pending {
-                for target in targets {
-                    // println!(
-                    //     "{} -{}-> {}",
-                    //     name,
-                    //     if pulse == Pulse::High { "high" } else { "low" },
-                    //     target
-                    // );
+            while let Some(pulse) = &self.modules.get_mut(&name).unwrap().get_pending() {
+                println!("pulsing {:?} from {}", pulse, name);
+                for target in &targets {
+                    println!(
+                        "{} -{}-> {}",
+                        name,
+                        if *pulse == Pulse::High { "high" } else { "low" },
+                        target
+                    );
                     if let Some([sender, receiver]) = self.modules.get_many_mut([&name, &target]) {
-                        receiver.receive_pulse(&sender.name, pulse);
+                        receiver.receive_pulse(&sender.name, *pulse);
                     }
-                    if pulse == Pulse::High {
+                    if *pulse == Pulse::High {
                         self.highs += 1;
                     } else {
                         self.lows += 1;
                     }
                 }
-                self.modules.get_mut(&name).unwrap().pending = None;
             }
         }
     }
