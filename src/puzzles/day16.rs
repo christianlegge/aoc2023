@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::format};
+use std::collections::HashSet;
 
 #[test]
 fn test() {
@@ -117,7 +117,7 @@ impl MirrorGrid {
     }
 
     fn in_bounds(&self, loc: Coords) -> bool {
-        loc.row >= 0 && loc.row < self.height && loc.col >= 0 && loc.col < self.width
+        loc.row < self.height && loc.col < self.width
     }
 
     fn propagate_ray(&mut self, dir: Direction, loc: Coords) {

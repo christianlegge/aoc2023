@@ -153,7 +153,7 @@ impl RockGrid {
         grid
     }
 
-    fn print_grid(&self) {
+    fn _print_grid(&self) {
         println!("grid:\n{}\n", self.to_string());
     }
 

@@ -1,8 +1,4 @@
-use std::{
-    cmp::{max, min},
-    collections::HashMap,
-    ops::{Range, RangeInclusive},
-};
+use std::collections::HashMap;
 
 use regex::Regex;
 
@@ -37,64 +33,64 @@ struct Part {
     s: i32,
 }
 
-struct PartCombos {
-    x: (u64, u64),
-    m: (u64, u64),
-    a: (u64, u64),
-    s: (u64, u64),
-}
+// struct PartCombos {
+//     x: (u64, u64),
+//     m: (u64, u64),
+//     a: (u64, u64),
+//     s: (u64, u64),
+// }
 
-impl PartCombos {
-    fn new() -> Self {
-        PartCombos {
-            x: (1, 4000),
-            m: (1, 4000),
-            a: (1, 4000),
-            s: (1, 4000),
-        }
-    }
-
-    fn reduce_range(&mut self, cond: &str) {
-        let mut cond_chars = cond.chars();
-        let cmp: u64;
-
-        match (cond_chars.next().unwrap(), cond_chars.next().unwrap()) {
-            ('x', '<') => {
-                cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
-                self.x.1 = min(self.x.1, cmp - 1);
-            }
-            ('x', '>') => {
-                cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
-                self.x.0 = max(self.x.0, cmp + 1);
-            }
-            ('m', '<') => {
-                cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
-                self.m.1 = min(self.m.1, cmp - 1);
-            }
-            ('m', '>') => {
-                cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
-                self.m.0 = max(self.m.0, cmp + 1);
-            }
-            ('a', '<') => {
-                cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
-                self.a.1 = min(self.a.1, cmp - 1);
-            }
-            ('a', '>') => {
-                cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
-                self.a.0 = max(self.a.0, cmp + 1);
-            }
-            ('s', '<') => {
-                cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
-                self.s.1 = min(self.s.1, cmp - 1);
-            }
-            ('s', '>') => {
-                cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
-                self.s.0 = max(self.s.0, cmp + 1);
-            }
-            _ => panic!("error matching condition string: {}", cond),
-        };
-    }
-}
+// impl PartCombos {
+//     fn new() -> Self {
+//         PartCombos {
+//             x: (1, 4000),
+//             m: (1, 4000),
+//             a: (1, 4000),
+//             s: (1, 4000),
+//         }
+//     }
+//
+//     fn reduce_range(&mut self, cond: &str) {
+//         let mut cond_chars = cond.chars();
+//         let cmp: u64;
+//
+//         match (cond_chars.next().unwrap(), cond_chars.next().unwrap()) {
+//             ('x', '<') => {
+//                 cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
+//                 self.x.1 = min(self.x.1, cmp - 1);
+//             }
+//             ('x', '>') => {
+//                 cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
+//                 self.x.0 = max(self.x.0, cmp + 1);
+//             }
+//             ('m', '<') => {
+//                 cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
+//                 self.m.1 = min(self.m.1, cmp - 1);
+//             }
+//             ('m', '>') => {
+//                 cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
+//                 self.m.0 = max(self.m.0, cmp + 1);
+//             }
+//             ('a', '<') => {
+//                 cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
+//                 self.a.1 = min(self.a.1, cmp - 1);
+//             }
+//             ('a', '>') => {
+//                 cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
+//                 self.a.0 = max(self.a.0, cmp + 1);
+//             }
+//             ('s', '<') => {
+//                 cmp = cond.split("<").nth(1).unwrap().parse().unwrap();
+//                 self.s.1 = min(self.s.1, cmp - 1);
+//             }
+//             ('s', '>') => {
+//                 cmp = cond.split(">").nth(1).unwrap().parse().unwrap();
+//                 self.s.0 = max(self.s.0, cmp + 1);
+//             }
+//             _ => panic!("error matching condition string: {}", cond),
+//         };
+//     }
+// }
 
 #[derive(Debug)]
 struct Workflow {

@@ -64,7 +64,7 @@ impl CrucibleMap {
         }
     }
 
-    fn draw_path(&mut self, path: &Vec<(Coords, Direction)>) -> usize {
+    fn draw_path(&mut self, path: &Vec<(Coords, Direction)>) {
         for (coords, dir) in path {
             self.grid[coords.row][coords.col] = match dir {
                 Direction::Up(_) => '^',
@@ -73,7 +73,6 @@ impl CrucibleMap {
                 Direction::Right(_) => '>',
             };
         }
-        let mut sum = 0;
         for i in 0..self.height {
             for j in 0..self.width {
                 // if let Some(el) = path.get(&Coords { row: i, col: j }) {
@@ -84,7 +83,6 @@ impl CrucibleMap {
             }
             print!("\n");
         }
-        sum
     }
 
     fn get_cell_value(&self, coords: &Coords) -> usize {
@@ -96,7 +94,7 @@ impl CrucibleMap {
         list: &HashMap<(Coords, Direction), AStarScores>,
     ) -> ((Coords, Direction), AStarScores) {
         let mut kvs = list.iter().collect::<Vec<_>>();
-        kvs.sort_by(|(k1, v1), (k2, v2)| (v1.g + v1.h).partial_cmp(&(v2.g + v2.h)).unwrap());
+        kvs.sort_by(|(_k1, v1), (_k2, v2)| (v1.g + v1.h).partial_cmp(&(v2.g + v2.h)).unwrap());
         let curr = kvs.first().unwrap();
         (*(*curr).0, *(*curr).1)
     }
@@ -253,7 +251,7 @@ impl CrucibleMap {
         // dbg!(coords)
     }
 
-    fn find_valid_next(&self, curr: Coords, dir: Direction) -> Vec<(Coords, Direction)> {
+    fn _find_valid_next(&self, curr: Coords, dir: Direction) -> Vec<(Coords, Direction)> {
         let mut coords = Vec::new();
         if curr.row > 0 && dir != Direction::Up(3) && !matches!(dir, Direction::Down(_)) {
             coords.push((

@@ -15,7 +15,7 @@ fn test() {
 }
 #[test]
 fn test2() {
-    dbg!(count_valid_configurations("?###???????? 3,2,1"));
+    // dbg!(count_valid_configurations("?###???????? 3,2,1"));
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ enum SpringRun {
 #[derive(Debug, Clone)]
 struct SpringRow {
     inside_group: bool,
-    spring_runs: Vec<SpringRun>,
+    // spring_runs: Vec<SpringRun>,
     springs: String,
     groups: Vec<u32>,
 }
@@ -81,7 +81,7 @@ impl SpringRow {
 
         SpringRow {
             inside_group: false,
-            spring_runs: runs,
+            // spring_runs: runs,
             springs: springs.to_string(),
             groups: groups
                 .split(",")
@@ -90,34 +90,34 @@ impl SpringRow {
         }
     }
 
-    fn is_valid(&self) -> Option<bool> {
-        let damaged_runs = self
-            .spring_runs
-            .iter()
-            .filter(|c| matches!(c, SpringRun::Damaged(_)))
-            .map(|c| {
-                if let SpringRun::Damaged(n) = c {
-                    n
-                } else {
-                    panic!("error in is_valid finding damaged_runs")
-                }
-            });
-        if damaged_runs.clone().count() == self.groups.len()
-            && damaged_runs.zip(&self.groups).all(|(a, b)| a == b)
-        {
-            Some(true)
-        } else {
-            if self
-                .spring_runs
-                .iter()
-                .any(|c| matches!(c, SpringRun::Unknown(_)))
-            {
-                None
-            } else {
-                Some(false)
-            }
-        }
-    }
+    // fn is_valid(&self) -> Option<bool> {
+    //     let damaged_runs = self
+    //         .spring_runs
+    //         .iter()
+    //         .filter(|c| matches!(c, SpringRun::Damaged(_)))
+    //         .map(|c| {
+    //             if let SpringRun::Damaged(n) = c {
+    //                 n
+    //             } else {
+    //                 panic!("error in is_valid finding damaged_runs")
+    //             }
+    //         });
+    //     if damaged_runs.clone().count() == self.groups.len()
+    //         && damaged_runs.zip(&self.groups).all(|(a, b)| a == b)
+    //     {
+    //         Some(true)
+    //     } else {
+    //         if self
+    //             .spring_runs
+    //             .iter()
+    //             .any(|c| matches!(c, SpringRun::Unknown(_)))
+    //         {
+    //             None
+    //         } else {
+    //             Some(false)
+    //         }
+    //     }
+    // }
 
     fn to_str(&self) -> String {
         let mut str = self.springs.clone();
@@ -137,7 +137,7 @@ impl SpringRow {
             println!("saved function call: {} ({})", self.to_str(), n);
             return *n;
         }
-        let indent = "  ".repeat(depth);
+        // let indent = "  ".repeat(depth);
         let mut start_chunk = String::from(start);
         // println!("{}try_consume_group {}/{}", indent, start, self.to_str());
         let mut self_clone = self.clone();
@@ -218,32 +218,32 @@ impl SpringRow {
     }
 }
 
-fn count_valid_configurations(data: &str) -> usize {
-    // println!("counting valid configurations for {}", data);
-    let row = SpringRow::new(data);
-    match row.is_valid() {
-        Some(valid) => {
-            if valid {
-                1
-            } else {
-                0
-            }
-        }
-        None => {
-            let parts = data.splitn(2, "?");
-            // let next_row = remove_first_question(data);
-            count_valid_configurations(&format!(
-                "{}.{}",
-                parts.clone().next().unwrap(),
-                parts.clone().nth(1).unwrap()
-            )) + count_valid_configurations(&format!(
-                "{}#{}",
-                parts.clone().next().unwrap(),
-                parts.clone().nth(1).unwrap()
-            ))
-        }
-    }
-}
+// fn count_valid_configurations(data: &str) -> usize {
+//     // println!("counting valid configurations for {}", data);
+//     let row = SpringRow::new(data);
+//     match row.is_valid() {
+//         Some(valid) => {
+//             if valid {
+//                 1
+//             } else {
+//                 0
+//             }
+//         }
+//         None => {
+//             let parts = data.splitn(2, "?");
+//             // let next_row = remove_first_question(data);
+//             count_valid_configurations(&format!(
+//                 "{}.{}",
+//                 parts.clone().next().unwrap(),
+//                 parts.clone().nth(1).unwrap()
+//             )) + count_valid_configurations(&format!(
+//                 "{}#{}",
+//                 parts.clone().next().unwrap(),
+//                 parts.clone().nth(1).unwrap()
+//             ))
+//         }
+//     }
+// }
 
 // fn remove_first_question(data: &str) -> String {
 //     data.chars()

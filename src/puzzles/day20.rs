@@ -1,5 +1,4 @@
 use hashbrown::HashMap;
-use std::collections::VecDeque;
 
 #[test]
 fn test() {
@@ -120,7 +119,7 @@ impl Module {
 
 impl ModuleArray {
     fn add(&mut self, module: Module) {
-        let mut module = module;
+        let module = module;
         self.module_map
             .insert(module.name.clone(), module.targets.clone());
         self.modules.insert(module.name.clone(), module);
@@ -176,7 +175,7 @@ impl ModuleArray {
         }
     }
 
-    fn inspect(&self) {
+    fn _inspect(&self) {
         for module in self.modules.values() {
             dbg!(&module);
         }

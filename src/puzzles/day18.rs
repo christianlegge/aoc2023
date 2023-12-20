@@ -20,21 +20,15 @@ U 2 (#7a21e3)",
     ));
 }
 
-enum Move {
-    U(usize),
-    D(usize),
-    L(usize),
-    R(usize),
-}
-
-struct Dig {
-    dig_move: Move,
-    color: String,
-}
+// enum Move {
+//     U(usize),
+//     D(usize),
+//     L(usize),
+//     R(usize),
+// }
 
 struct DigPlot {
     grid: Vec<Vec<char>>,
-    dig_plan: Vec<Dig>,
     dug: HashMap<(usize, usize), bool>,
     width: usize,
     height: usize,
@@ -42,7 +36,6 @@ struct DigPlot {
 
 impl DigPlot {
     fn new(data: String) -> Self {
-        let mut dig_plan = Vec::new();
         let moves_sum: usize = data
             .lines()
             .map(|s| {
@@ -58,9 +51,9 @@ impl DigPlot {
         let (mut row, mut col) = (height / 2, width / 2);
 
         let mut grid = Vec::new();
-        for i in 0..height {
+        for _ in 0..height {
             let mut rv = Vec::new();
-            for j in 0..width {
+            for _ in 0..width {
                 rv.push('.');
             }
             grid.push(rv);
@@ -69,49 +62,49 @@ impl DigPlot {
         for line in data.lines() {
             let parts = line.split_whitespace().collect::<Vec<_>>();
             match parts[..] {
-                ["U", n, c] => {
+                ["U", n, _c] => {
                     let n = n.parse().unwrap();
-                    dig_plan.push(Dig {
-                        color: c.to_owned(),
-                        dig_move: Move::U(n),
-                    });
-                    for i in 0..n {
+                    // dig_plan.push(Dig {
+                    //     color: c.to_owned(),
+                    //     dig_move: Move::U(n),
+                    // });
+                    for _ in 0..n {
                         grid[row][col] = '#';
                         row -= 1;
                     }
                     // row -= n as i32;
                 }
-                ["D", n, c] => {
+                ["D", n, _c] => {
                     let n = n.parse().unwrap();
-                    dig_plan.push(Dig {
-                        color: c.to_owned(),
-                        dig_move: Move::D(n),
-                    });
-                    for i in 0..n {
+                    // dig_plan.push(Dig {
+                    //     color: c.to_owned(),
+                    //     dig_move: Move::D(n),
+                    // });
+                    for _ in 0..n {
                         grid[row][col] = '#';
                         row += 1;
                     }
                     // row += n as i32;
                 }
-                ["L", n, c] => {
+                ["L", n, _c] => {
                     let n = n.parse().unwrap();
-                    dig_plan.push(Dig {
-                        color: c.to_owned(),
-                        dig_move: Move::L(n),
-                    });
-                    for i in 0..n {
+                    // dig_plan.push(Dig {
+                    //     color: c.to_owned(),
+                    //     dig_move: Move::L(n),
+                    // });
+                    for _ in 0..n {
                         grid[row][col] = '#';
                         col -= 1;
                     }
                     // col -= n as i32;
                 }
-                ["R", n, c] => {
+                ["R", n, _c] => {
                     let n = n.parse().unwrap();
-                    dig_plan.push(Dig {
-                        color: c.to_owned(),
-                        dig_move: Move::R(n),
-                    });
-                    for i in 0..n {
+                    // dig_plan.push(Dig {
+                    //     color: c.to_owned(),
+                    //     dig_move: Move::R(n),
+                    // });
+                    for _ in 0..n {
                         grid[row][col] = '#';
                         col += 1;
                     }
@@ -136,7 +129,6 @@ impl DigPlot {
             width,
             height,
             grid,
-            dig_plan,
             dug: HashMap::new(),
         }
     }
