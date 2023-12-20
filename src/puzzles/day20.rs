@@ -120,19 +120,20 @@ impl Module {
 
 impl ModuleArray {
     fn add(&mut self, module: Module) {
+        let mut module = module;
         self.module_map
             .insert(module.name.clone(), module.targets.clone());
         self.modules.insert(module.name.clone(), module);
     }
 
     fn push_button(&mut self) {
-        println!("----------------------------");
+        // println!("----------------------------");
         self.modules
             .get_mut("broadcaster")
             .unwrap()
             .receive_pulse("button", Pulse::Low);
         self.lows += 1;
-        println!("button -low-> broadcaster");
+        // println!("button -low-> broadcaster");
         while self.modules.iter().any(|(_, m)| m.pending.is_some()) {
             self.tick();
         }
@@ -142,15 +143,13 @@ impl ModuleArray {
         for (name, targets) in self.module_map.clone() {
             if let Some(pulse) = self.modules.get(&name).unwrap().pending {
                 for target in targets {
-                    println!(
-                        "{} -{}-> {}",
-                        name,
-                        if pulse == Pulse::High { "high" } else { "low" },
-                        target
-                    );
-                    if &target != "output" {
-                        let [sender, receiver] =
-                            self.modules.get_many_mut([&name, &target]).unwrap();
+                    // println!(
+                    //     "{} -{}-> {}",
+                    //     name,
+                    //     if pulse == Pulse::High { "high" } else { "low" },
+                    //     target
+                    // );
+                    if let Some([sender, receiver]) = self.modules.get_many_mut([&name, &target]) {
                         receiver.receive_pulse(&sender.name, pulse);
                     }
                     if pulse == Pulse::High {
@@ -160,6 +159,19 @@ impl ModuleArray {
                     }
                 }
                 self.modules.get_mut(&name).unwrap().pending = None;
+            }
+        }
+    }
+
+    fn resolve_inputs(&mut self) {
+        for (name, module) in &mut self.modules {
+            if let ModuleType::Conjunction(ref mut inputs) = module.module_type {
+                self.module_map
+                    .keys()
+                    .filter(|n| self.module_map.get(*n).unwrap().contains(name))
+                    .for_each(|n| {
+                        inputs.insert(n.to_string(), Pulse::Low);
+                    });
             }
         }
     }
@@ -179,11 +191,15 @@ pub fn solve(data: String) {
         lows: 0,
     };
     for line in data.lines() {
+        if line == "" {
+            continue;
+        }
         println!("{}", line);
         let module = Module::new(line);
         modules.add(module);
     }
-    for _ in 0..10 {
+    modules.resolve_inputs();
+    for _ in 0..1000 {
         modules.push_button();
     }
     println!(
