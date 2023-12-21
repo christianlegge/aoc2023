@@ -2,7 +2,19 @@ use std::collections::HashSet;
 
 #[test]
 fn test() {
-    solve(String::from(""));
+    solve(String::from(
+        "...........
+.....###.#.
+.###.##..#.
+..#.#...#..
+....#.#....
+.##..S####.
+.##..#...#.
+.......##..
+.##.#.####.
+.##..##.##.
+...........",
+    ));
 }
 
 struct Garden {
@@ -39,24 +51,24 @@ impl Garden {
             return self.reachable.len();
         }
 
-        let mut new_tiles = Vec::new();
+        let mut new_tiles = HashSet::new();
 
         for (row, col) in &self.reachable {
             if *row > 0 && self.grid[row - 1][*col] == '.' {
-                new_tiles.push((row - 1, *col));
+                new_tiles.insert((row - 1, *col));
             }
             if *row < self.height - 1 && self.grid[row + 1][*col] == '.' {
-                new_tiles.push((row + 1, *col));
+                new_tiles.insert((row + 1, *col));
             }
             if *col > 0 && self.grid[*row][col - 1] == '.' {
-                new_tiles.push((*row, col - 1));
+                new_tiles.insert((*row, col - 1));
             }
             if *col < self.width - 1 && self.grid[*row][col + 1] == '.' {
-                new_tiles.push((*row, col + 1));
+                new_tiles.insert((*row, col + 1));
             }
         }
 
-        self.reachable.extend(new_tiles.iter());
+        self.reachable = new_tiles;
 
         self.walk(steps - 1)
     }
@@ -64,5 +76,5 @@ impl Garden {
 
 pub fn solve(data: String) {
     let mut garden = Garden::new(data.as_str());
-    println!("{}", garden.walk(64));
+    println!("{}", garden.walk(6));
 }
