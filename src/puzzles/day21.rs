@@ -1,4 +1,6 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ops::Rem};
+
+use num::traits::Euclid;
 
 #[test]
 fn test() {
@@ -19,7 +21,7 @@ fn test() {
 
 struct Garden {
     grid: Vec<Vec<char>>,
-    reachable: HashSet<(usize, usize)>,
+    reachable: HashSet<(i64, i64)>,
     height: usize,
     width: usize,
 }
@@ -33,7 +35,7 @@ impl Garden {
             for (cidx, char) in line.chars().enumerate() {
                 row.push(char);
                 if char == 'S' {
-                    reachable.insert((ridx, cidx));
+                    reachable.insert((ridx as i64, cidx as i64));
                 }
             }
             rows.push(row);
@@ -46,24 +48,30 @@ impl Garden {
         }
     }
 
-    fn walk(&mut self, steps: usize) -> usize {
+    fn get_pu_char(&self, row: i64, col: i64) -> char {
+        let ridx = row.rem_euclid(self.height as i64);
+        let cidx = col.rem_euclid(self.width as i64);
+        self.grid[ridx as usize][cidx as usize]
+    }
+
+    fn walk(&mut self, steps: usize) -> u64 {
         if steps == 0 {
-            return self.reachable.len();
+            return self.reachable.len() as u64;
         }
 
         let mut new_tiles = HashSet::new();
 
         for (row, col) in &self.reachable {
-            if *row > 0 && self.grid[row - 1][*col] == '.' {
+            if self.get_pu_char(row - 1, *col) == '.' {
                 new_tiles.insert((row - 1, *col));
             }
-            if *row < self.height - 1 && self.grid[row + 1][*col] == '.' {
+            if self.get_pu_char(row + 1, *col) == '.' {
                 new_tiles.insert((row + 1, *col));
             }
-            if *col > 0 && self.grid[*row][col - 1] == '.' {
+            if self.get_pu_char(*row, col - 1) == '.' {
                 new_tiles.insert((*row, col - 1));
             }
-            if *col < self.width - 1 && self.grid[*row][col + 1] == '.' {
+            if self.get_pu_char(*row, col + 1) == '.' {
                 new_tiles.insert((*row, col + 1));
             }
         }
@@ -76,5 +84,5 @@ impl Garden {
 
 pub fn solve(data: String) {
     let mut garden = Garden::new(data.as_str());
-    println!("{}", garden.walk(6));
+    println!("{}", garden.walk(5000));
 }
