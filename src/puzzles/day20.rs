@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 
 use either::Either;
 use hashbrown::HashMap;
+use num::Integer;
 
 #[test]
 fn test() {
@@ -28,6 +29,12 @@ fn test() {
     ));
 }
 
+enum SearchState {
+    Started,
+    Impossible,
+    Ended(u64),
+}
+
 #[derive(Clone, Eq, Debug, PartialEq)]
 enum ModuleType {
     Broadcaster,
@@ -35,7 +42,7 @@ enum ModuleType {
     Conjunction(HashMap<String, Pulse>),
 }
 
-#[derive(Clone, Debug, Copy, Eq, PartialEq)]
+#[derive(Clone, Debug, Copy, Eq, PartialEq, Hash)]
 enum Pulse {
     High,
     Low,
@@ -52,6 +59,8 @@ struct Module {
 #[derive(Debug)]
 struct ModuleArray {
     modules: HashMap<String, Module>,
+    least_memo: HashMap<(String, Pulse), u64>,
+    presses: usize,
     lows: usize,
     highs: usize,
     module_map: HashMap<String, Vec<String>>,
@@ -88,6 +97,75 @@ impl Module {
         }
     }
 
+    fn least_to_send(
+        &self,
+        pulse: Pulse,
+        modules: &ModuleArray,
+        least_memo: &mut HashMap<(String, Pulse), SearchState>,
+    ) -> Option<u64> {
+        println!("least to send {:?} from {}", pulse, self.name);
+        match least_memo.get(&(self.name.clone(), pulse)) {
+            None => {}
+            Some(SearchState::Started) => return None,
+            Some(SearchState::Ended(n)) => return Some(*n),
+            Some(SearchState::Impossible) => return None,
+        }
+        least_memo.insert((self.name.clone(), pulse), SearchState::Started);
+        let inputs = modules
+            .modules
+            .iter()
+            .filter(|(_, v)| v.targets.contains(&self.name));
+        let ways = match (&self.module_type, pulse) {
+            (ModuleType::Broadcaster, Pulse::High) => inputs
+                .map(|(n, m)| m.least_to_send(Pulse::High, modules, least_memo))
+                .min()
+                .unwrap(),
+            (ModuleType::Broadcaster, Pulse::Low) => Some(1),
+            (ModuleType::FlipFlop(_), p) => {
+                let ways_to_get_low = inputs
+                    .map(|(n, m)| m.least_to_send(Pulse::Low, modules, least_memo))
+                    .filter_map(|n| n)
+                    .min();
+                if p == Pulse::High {
+                    ways_to_get_low
+                } else {
+                    if let Some(n) = ways_to_get_low {
+                        Some(n + 1)
+                    } else {
+                        None
+                    }
+                }
+            }
+            (ModuleType::Conjunction(_), Pulse::High) => inputs
+                .map(|(n, m)| {
+                    min(
+                        m.least_to_send(Pulse::High, modules, least_memo),
+                        m.least_to_send(Pulse::Low, modules, least_memo),
+                    )
+                })
+                .min()
+                .unwrap(),
+
+            (ModuleType::Conjunction(_), Pulse::Low) => Some(lcm(&inputs
+                .map(|(n, m)| m.least_to_send(Pulse::High, modules, least_memo))
+                .filter_map(|n| n)
+                .collect::<Vec<_>>())),
+        };
+
+        println!("caching value {:?} for {}, {:?}", ways, self.name, ways);
+
+        least_memo.insert(
+            (self.name.clone(), pulse),
+            if let Some(n) = ways {
+                SearchState::Ended(n)
+            } else {
+                SearchState::Impossible
+            },
+        );
+
+        ways
+    }
+
     fn receive_pulse(&mut self, origin: &str, pulse: Pulse) {
         use ModuleType::*;
         match (&mut self.module_type, pulse) {
@@ -100,7 +178,7 @@ impl Module {
                 self.pending = either::Left(Some(if *state { Pulse::High } else { Pulse::Low }));
             }
             (Conjunction(ref mut states), p) => {
-                println!("receiving pulse on {}", self.name);
+                // println!("receiving pulse on {}", self.name);
                 states.insert(origin.to_string(), p);
                 let to_send = if states.iter().all(|(_, p)| *p == Pulse::High) {
                     Pulse::Low
@@ -108,7 +186,7 @@ impl Module {
                     Pulse::High
                 };
                 self.pending.as_mut().right().unwrap().push_back(to_send);
-                dbg!(&self.pending);
+                // dbg!(&self.pending);
                 // self.send_pulses(if states.iter().all(|(_, p)| *p == Pulse::High) {
                 //     Pulse::Low
                 // } else {
@@ -164,13 +242,14 @@ impl ModuleArray {
     }
 
     fn push_button(&mut self) {
-        println!("----------------------------");
+        self.presses += 1;
+        // println!("----------------------------");
         self.modules
             .get_mut("broadcaster")
             .unwrap()
             .receive_pulse("button", Pulse::Low);
         self.lows += 1;
-        println!("button -low-> broadcaster");
+        // println!("button -low-> broadcaster");
         while self.modules.iter().any(|(_, m)| m.has_pending()) {
             self.tick();
         }
@@ -179,14 +258,13 @@ impl ModuleArray {
     fn tick(&mut self) {
         for (name, targets) in self.module_map.clone() {
             while let Some(pulse) = &self.modules.get_mut(&name).unwrap().get_pending() {
-                println!("pulsing {:?} from {}", pulse, name);
                 for target in &targets {
-                    println!(
-                        "{} -{}-> {}",
-                        name,
-                        if *pulse == Pulse::High { "high" } else { "low" },
-                        target
-                    );
+                    // println!(
+                    //     "{} -{}-> {}",
+                    //     name,
+                    //     if *pulse == Pulse::High { "high" } else { "low" },
+                    //     target
+                    // );
                     if let Some([sender, receiver]) = self.modules.get_many_mut([&name, &target]) {
                         receiver.receive_pulse(&sender.name, *pulse);
                     }
@@ -194,6 +272,12 @@ impl ModuleArray {
                         self.highs += 1;
                     } else {
                         self.lows += 1;
+                    }
+                    if pulse == &Pulse::Low && target == "rx" {
+                        panic!("LOW PULSE SENT: {}", self.presses);
+                    }
+                    if self.highs % 100000 == 0 || self.lows % 100000 == 0 {
+                        println!("highs: {}, lows: {}", self.highs, self.lows);
                     }
                 }
             }
@@ -220,9 +304,33 @@ impl ModuleArray {
     }
 }
 
+fn min(num1: Option<u64>, num2: Option<u64>) -> Option<u64> {
+    match (num1, num2) {
+        (None, None) => None,
+        (None, Some(_)) => num2,
+        (Some(_), None) => num1,
+        (Some(_), Some(_)) => {
+            if num1 < num2 {
+                num1
+            } else {
+                num2
+            }
+        }
+    }
+}
+
+fn lcm(nums: &Vec<u64>) -> u64 {
+    nums.iter()
+        .copied()
+        .reduce(|x: u64, y: u64| x.lcm(&y))
+        .unwrap()
+}
+
 pub fn solve(data: String) {
     let mut modules = ModuleArray {
         modules: HashMap::new(),
+        least_memo: HashMap::new(),
+        presses: 0,
         module_map: HashMap::new(),
         highs: 0,
         lows: 0,
@@ -236,13 +344,24 @@ pub fn solve(data: String) {
         modules.add(module);
     }
     modules.resolve_inputs();
-    for _ in 0..1000 {
-        modules.push_button();
-    }
+    let final_module = modules
+        .modules
+        .iter()
+        .filter(|(_, m)| m.targets.contains(&String::from("rx")))
+        .next()
+        .unwrap()
+        .1;
+
+    let mut least_memo = HashMap::new();
+
+    // loop {
+    //     modules.push_button();
+    // }
     println!(
-        "highs: {} lows: {} prod: {}",
+        "highs: {} lows: {} prod: {} rx low: {:?}",
         modules.highs,
         modules.lows,
-        modules.highs * modules.lows
+        modules.highs * modules.lows,
+        final_module.least_to_send(Pulse::Low, &modules, &mut least_memo)
     );
 }
